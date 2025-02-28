@@ -1,16 +1,49 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import QuestionForm from '../components/QuestionForm';
 import { toast } from 'sonner';
+import { supabase } from "@/integrations/supabase/client";
 
 const ExamPage = () => {
   const { page } = useParams<{ page: string }>();
   const pageNumber = parseInt(page || '1');
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [questions, setQuestions] = useState<any[]>([]);
   
   // Example patient image - in a real app this would come from your data
   const patientImageUrl = "public/lovable-uploads/885815da-14b8-4b48-a843-41e92d404453.png";
+  
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        setLoading(true);
+        // Fetch questions from Supabase where chunk_id matches the current page
+        const { data, error } = await supabase
+          .from('exam_questions')
+          .select('*')
+          .eq('chunk_id', pageNumber)
+          .order('question_id');
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          console.log('Fetched exam questions:', data);
+          setQuestions(data);
+        }
+      } catch (error) {
+        console.error('Error fetching questions:', error);
+        toast.error('Failed to load exam questions');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchQuestions();
+  }, [pageNumber]);
   
   const handleNext = () => {
     if (pageNumber === 1) {
@@ -27,7 +60,18 @@ const ExamPage = () => {
     toast.success("Exam submitted successfully");
   };
   
-  // Page 1 questions
+  // Transform database questions into the format expected by QuestionForm
+  const formatQuestionsForDisplay = (questions: any[]) => {
+    return questions.map(q => ({
+      id: q.question_id,
+      title: q.question_text,
+      description: q.clin_reasoning || undefined,
+      responseType: q.answer_format?.type || 'text',
+      tableHeaders: q.answer_format?.tableHeaders || undefined,
+    }));
+  };
+  
+  // Fallback questions if no data is loaded from Supabase
   const page1Questions = [
     {
       id: 1,
@@ -48,7 +92,7 @@ const ExamPage = () => {
     }
   ];
   
-  // Page 2 questions
+  // Fallback questions for page 2
   const page2Questions = [
     {
       id: 4,
@@ -63,6 +107,11 @@ const ExamPage = () => {
       tableHeaders: [['Physical Exam Finding', 'Diagnosis it relates to', 'Is the Diagnosis More or Less Likely']],
     }
   ];
+  
+  // Use database questions if available, otherwise use fallbacks
+  const displayQuestions = questions.length > 0 
+    ? formatQuestionsForDisplay(questions) 
+    : (pageNumber === 1 ? page1Questions : page2Questions);
   
   const patientWords = "I don't have the energy I used to. I'm still going on my walk around the neighborhood every morning, but it's taking me longer than usual. Sometimes I get short of breath and have to slow down. Other times it feels like my heart is racing or pounding in my chest, even when I'm not walking around.";
   
@@ -80,55 +129,64 @@ const ExamPage = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <QuestionForm
-        examTitle="Circulation Block CBL Final"
-        timeRemaining="59:59"
-        caseNumber={1}
-        caseName="MP"
-        patientInfo={{
-          name: "Mark Power",
-          pronouns: "he/him",
-          age: 75,
-          imageUrl: patientImageUrl
-        }}
-        patientWords={patientWords}
-        questions={pageNumber === 1 ? page1Questions : page2Questions}
-        onNext={handleNext}
-        onSubmit={handleSubmit}
-      />
-      
-      {pageNumber === 2 && (
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="glass-card p-5">
-            <h3 className="font-medium mb-3">Additional History</h3>
-            <p className="text-sm text-gray-700">{additionalHistory}</p>
-          </div>
-          <div className="glass-card p-5">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-medium mb-3">Past Medical History</h3>
-                <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
-                  <li>Coronary Artery Disease w/o history of MI</li>
-                  <li>Status post percutaneous coronary intervention with stent 3 years ago</li>
-                  <li>Hypertension</li>
-                  <li>Hypercholesterolemia</li>
-                </ul>
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-clinicus-blue"></div>
+          <p className="ml-4 text-gray-600">Loading exam questions...</p>
+        </div>
+      ) : (
+        <>
+          <QuestionForm
+            examTitle="Circulation Block CBL Final"
+            timeRemaining="59:59"
+            caseNumber={1}
+            caseName="MP"
+            patientInfo={{
+              name: "Mark Power",
+              pronouns: "he/him",
+              age: 75,
+              imageUrl: patientImageUrl
+            }}
+            patientWords={patientWords}
+            questions={displayQuestions}
+            onNext={handleNext}
+            onSubmit={handleSubmit}
+          />
+          
+          {pageNumber === 2 && (
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="glass-card p-5">
+                <h3 className="font-medium mb-3">Additional History</h3>
+                <p className="text-sm text-gray-700">{additionalHistory}</p>
               </div>
-              <div>
-                <h3 className="font-medium mb-3">Medications</h3>
-                <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
-                  <li>Metoprolol</li>
-                  <li>Atorvastatin</li>
-                  <li>Aspirin</li>
-                </ul>
+              <div className="glass-card p-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="font-medium mb-3">Past Medical History</h3>
+                    <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
+                      <li>Coronary Artery Disease w/o history of MI</li>
+                      <li>Status post percutaneous coronary intervention with stent 3 years ago</li>
+                      <li>Hypertension</li>
+                      <li>Hypercholesterolemia</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-medium mb-3">Medications</h3>
+                    <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
+                      <li>Metoprolol</li>
+                      <li>Atorvastatin</li>
+                      <li>Aspirin</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div className="glass-card p-5 md:col-span-2">
+                <h3 className="font-medium mb-3">Social History</h3>
+                <p className="text-sm text-gray-700">{socialHistory}</p>
               </div>
             </div>
-          </div>
-          <div className="glass-card p-5 md:col-span-2">
-            <h3 className="font-medium mb-3">Social History</h3>
-            <p className="text-sm text-gray-700">{socialHistory}</p>
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
