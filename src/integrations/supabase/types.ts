@@ -45,6 +45,27 @@ export type Database = {
         }
         Relationships: []
       }
+      tests: {
+        Row: {
+          case_info: Json
+          test_description: string | null
+          test_id: number
+          test_name: string
+        }
+        Insert: {
+          case_info: Json
+          test_description?: string | null
+          test_id: number
+          test_name: string
+        }
+        Update: {
+          case_info?: Json
+          test_description?: string | null
+          test_id?: number
+          test_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -11,38 +11,62 @@ const ExamPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<any[]>([]);
+  const [caseInfo, setCaseInfo] = useState<string>('');
+  const [examTitle, setExamTitle] = useState<string>('Medical Exam');
   
   // Example patient image - in a real app this would come from your data
   const patientImageUrl = "public/lovable-uploads/885815da-14b8-4b48-a843-41e92d404453.png";
   
   useEffect(() => {
-    const fetchQuestions = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
+        
+        // Fetch the test information first
+        const { data: testData, error: testError } = await supabase
+          .from('tests')
+          .select('*')
+          .eq('test_id', 1) // Using test_id 1 for the CF case
+          .single();
+          
+        if (testError) {
+          throw testError;
+        }
+        
+        if (testData) {
+          setExamTitle(testData.test_name);
+          
+          // Find the case information for the current chunk/page
+          const chunkData = testData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
+          if (chunkData) {
+            setCaseInfo(chunkData.content);
+          }
+        }
+        
         // Fetch questions from Supabase where chunk_id matches the current page
-        const { data, error } = await supabase
+        const { data: questionData, error: questionError } = await supabase
           .from('exam_questions')
           .select('*')
           .eq('chunk_id', pageNumber)
           .order('question_id');
           
-        if (error) {
-          throw error;
+        if (questionError) {
+          throw questionError;
         }
         
-        if (data) {
-          console.log('Fetched exam questions:', data);
-          setQuestions(data);
+        if (questionData) {
+          console.log('Fetched exam questions:', questionData);
+          setQuestions(questionData);
         }
       } catch (error) {
-        console.error('Error fetching questions:', error);
-        toast.error('Failed to load exam questions');
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load exam data');
       } finally {
         setLoading(false);
       }
     };
     
-    fetchQuestions();
+    fetchData();
   }, [pageNumber]);
   
   const handleNext = () => {
@@ -113,7 +137,8 @@ const ExamPage = () => {
     ? formatQuestionsForDisplay(questions) 
     : (pageNumber === 1 ? page1Questions : page2Questions);
   
-  const patientWords = "I don't have the energy I used to. I'm still going on my walk around the neighborhood every morning, but it's taking me longer than usual. Sometimes I get short of breath and have to slow down. Other times it feels like my heart is racing or pounding in my chest, even when I'm not walking around.";
+  // Use case info from the database if available
+  const patientWords = caseInfo || "I don't have the energy I used to. I'm still going on my walk around the neighborhood every morning, but it's taking me longer than usual. Sometimes I get short of breath and have to slow down. Other times it feels like my heart is racing or pounding in my chest, even when I'm not walking around.";
   
   const additionalHistory = pageNumber === 2 ? 
     "You ask Mr. Power some additional questions about his symptoms. He denies any chest pain, chest pressure, orthopnea, paroxysmal nocturnal dyspnea, cough, sputum production, wheezing, hemoptysis, fever, chills, dizziness, lightheadedness, syncope, excessive daytime somnolence, tremor, skin or hair changes, heat or cold intolerance, or unintentional weight loss. He does endorse some mild bilateral lower extremity edema over the past few weeks." : undefined;
@@ -137,14 +162,14 @@ const ExamPage = () => {
       ) : (
         <>
           <QuestionForm
-            examTitle="Circulation Block CBL Final"
+            examTitle={examTitle}
             timeRemaining="59:59"
             caseNumber={1}
-            caseName="MP"
+            caseName={pageNumber === 1 ? "Lauren King" : "MP"}
             patientInfo={{
-              name: "Mark Power",
-              pronouns: "he/him",
-              age: 75,
+              name: pageNumber === 1 ? "Lauren King" : "Mark Power",
+              pronouns: pageNumber === 1 ? "she/her" : "he/him",
+              age: pageNumber === 1 ? 2 : 75,
               imageUrl: patientImageUrl
             }}
             patientWords={patientWords}

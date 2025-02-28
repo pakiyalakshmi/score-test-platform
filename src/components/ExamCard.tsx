@@ -11,6 +11,7 @@ interface ExamCardProps {
   percentage?: number;
   link: string;
   buttonText?: string;
+  testId?: number;
 }
 
 const ExamCard = ({
@@ -21,7 +22,8 @@ const ExamCard = ({
   date,
   percentage,
   link,
-  buttonText = "Start"
+  buttonText = "Start",
+  testId
 }: ExamCardProps) => {
   return (
     <div className="glass-card p-5 flex flex-col h-full animate-fade-in">
@@ -68,7 +70,10 @@ const ExamCard = ({
       )}
       
       <div className="mt-4 flex justify-center">
-        <Link to={link} className="gold-button text-center min-w-[80px]">
+        <Link 
+          to={testId ? `${link}?testId=${testId}` : link} 
+          className="gold-button text-center min-w-[80px]"
+        >
           {buttonText}
         </Link>
       </div>
