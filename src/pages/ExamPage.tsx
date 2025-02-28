@@ -33,17 +33,17 @@ const ExamPage = () => {
       id: 1,
       title: "What is the chief complaint?",
       description: "Limit your response to 50 characters.",
-      responseType: 'text',
+      responseType: 'text' as const,
     },
     {
       id: 2,
       title: "List four diagnoses on your differential. Include at least 2 must-not-miss diagnoses.",
-      responseType: 'differential',
+      responseType: 'differential' as const,
     },
     {
       id: 3,
       title: "Ask five review of system questions to refine your Ddx, and list one underlying diagnosis each may suggest if present.",
-      responseType: 'table',
+      responseType: 'table' as const,
       tableHeaders: [['Question', 'Underlying Diagnosis']],
     }
   ];
@@ -53,13 +53,13 @@ const ExamPage = () => {
     {
       id: 4,
       title: "List three pertinent positive/negative findings, the diagnosis it relates to, and whether it makes it more/less likely from the provided history.",
-      responseType: 'table',
+      responseType: 'table' as const,
       tableHeaders: [['Pertinent Positive/ Negative', 'Diagnosis it relates to', 'Is the Diagnosis More or Less Likely']],
     },
     {
       id: 5,
       title: "Besides the vital signs, list four physical exam findings, the diagnosis it relates to, and whether it makes it more/less likely.",
-      responseType: 'table',
+      responseType: 'table' as const,
       tableHeaders: [['Physical Exam Finding', 'Diagnosis it relates to', 'Is the Diagnosis More or Less Likely']],
     }
   ];
