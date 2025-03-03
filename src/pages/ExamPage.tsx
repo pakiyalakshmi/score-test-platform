@@ -1,157 +1,58 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import QuestionForm from '../components/QuestionForm';
 import { toast } from 'sonner';
-import { supabase } from "@/integrations/supabase/client";
+import QuestionForm from '../components/QuestionForm';
+import PatientInfoCard from '../components/exam/PatientInfoCard';
+import MedicalHistorySection from '../components/exam/MedicalHistorySection';
+import { useExamData } from '../hooks/useExamData';
+import { saveAnswers, getAllAnswers, checkAllQuestionsAnswered, submitExamAnswers } from '../utils/examAnswers';
 
 const ExamPage = () => {
   const { page } = useParams<{ page: string }>();
   const pageNumber = parseInt(page || '1');
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [questions, setQuestions] = useState<any[]>([]);
-  const [caseInfo, setCaseInfo] = useState<string>('');
-  const [examTitle, setExamTitle] = useState<string>('Medical Exam');
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  
+  // Use our custom hook to fetch exam data
+  const { loading, examTitle, caseInfo, displayQuestions } = useExamData(pageNumber);
   
   // Example patient image - in a real app this would come from your data
   const patientImageUrl = "public/lovable-uploads/885815da-14b8-4b48-a843-41e92d404453.png";
   
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch the test information first
-        const { data: testData, error: testError } = await supabase
-          .from('tests')
-          .select('*')
-          .eq('test_id', 1) // Using test_id 1 for the CF case
-          .single();
-          
-        if (testError) {
-          throw testError;
-        }
-        
-        if (testData) {
-          setExamTitle(testData.test_name);
-          
-          // Fix: Type check the case_info before using find method
-          if (Array.isArray(testData.case_info)) {
-            // Find the case information for the current chunk/page
-            const chunkData = testData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
-            if (chunkData) {
-              setCaseInfo(chunkData.content);
-            }
-          } else {
-            console.error('Expected case_info to be an array, got:', typeof testData.case_info);
-          }
-        }
-        
-        // Fetch questions from Supabase where chunk_id matches the current page
-        const { data: questionData, error: questionError } = await supabase
-          .from('exam_questions')
-          .select('*')
-          .eq('chunk_id', pageNumber)
-          .order('question_id');
-          
-        if (questionError) {
-          throw questionError;
-        }
-        
-        if (questionData) {
-          console.log('Fetched exam questions:', questionData);
-          setQuestions(questionData);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Failed to load exam data');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [pageNumber]);
-  
   const handleNext = () => {
     // Check if all questions have been answered
-    const displayQuestions = questions.length > 0 
-      ? formatQuestionsForDisplay(questions) 
-      : (pageNumber === 1 ? page1Questions : page2Questions);
-      
-    // Check if all answers are provided
-    const allAnswered = displayQuestions.every(q => answers[q.id] && 
-      (typeof answers[q.id] === 'string' ? answers[q.id].trim() !== '' : 
-       Array.isArray(answers[q.id]) ? answers[q.id].length > 0 : true));
-       
-    if (!allAnswered) {
-      toast.error("Please answer all questions before proceeding");
+    if (!checkAllQuestionsAnswered(displayQuestions, answers)) {
       return;
     }
     
-    // Save answers to localStorage for potential later use
-    const storedAnswers = JSON.parse(localStorage.getItem('examAnswers') || '{}');
-    const updatedAnswers = { ...storedAnswers, ...answers };
-    localStorage.setItem('examAnswers', JSON.stringify(updatedAnswers));
+    // Save answers to localStorage
+    saveAnswers(answers);
     
     if (pageNumber === 1) {
       navigate('/exam/2');
       toast.success("Page 1 completed");
     } else {
       // Process and submit all answers
-      const allAnswers = JSON.parse(localStorage.getItem('examAnswers') || '{}');
+      const allAnswers = getAllAnswers();
       submitExamAnswers(allAnswers);
       navigate('/student/results');
       toast.success("Exam submitted successfully");
     }
   };
   
-  const submitExamAnswers = async (answers: Record<string, any>) => {
-    try {
-      // Transform answers to the format expected by the database
-      const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
-        question_id: parseInt(questionId),
-        student_answer: answer,
-      }));
-      
-      const { error } = await supabase
-        .from('student_answers')
-        .insert(formattedAnswers);
-        
-      if (error) {
-        throw error;
-      }
-    } catch (err) {
-      console.error('Error submitting answers:', err);
-      // Continue navigation even if there's an error to not block the user
-    }
-  };
-  
   const handleSubmit = () => {
-    // Check if all answers are provided
-    const displayQuestions = questions.length > 0 
-      ? formatQuestionsForDisplay(questions) 
-      : (pageNumber === 1 ? page1Questions : page2Questions);
-      
-    const allAnswered = displayQuestions.every(q => answers[q.id] && 
-      (typeof answers[q.id] === 'string' ? answers[q.id].trim() !== '' : 
-       Array.isArray(answers[q.id]) ? answers[q.id].length > 0 : true));
-       
-    if (!allAnswered) {
-      toast.error("Please answer all questions before submitting");
+    // Check if all questions have been answered
+    if (!checkAllQuestionsAnswered(displayQuestions, answers)) {
       return;
     }
     
     // Save answers and navigate
-    const storedAnswers = JSON.parse(localStorage.getItem('examAnswers') || '{}');
-    const updatedAnswers = { ...storedAnswers, ...answers };
-    localStorage.setItem('examAnswers', JSON.stringify(updatedAnswers));
+    saveAnswers(answers);
     
     // Submit all answers
-    submitExamAnswers(updatedAnswers);
+    submitExamAnswers(getAllAnswers());
     navigate('/student/results');
     toast.success("Exam submitted successfully");
   };
@@ -167,62 +68,10 @@ const ExamPage = () => {
     setCurrentQuestionIndex(index);
   };
   
-  // Transform database questions into the format expected by QuestionForm
-  const formatQuestionsForDisplay = (questions: any[]) => {
-    return questions.map(q => ({
-      id: q.question_id,
-      title: q.question_text,
-      description: q.clin_reasoning || undefined,
-      responseType: q.answer_format?.type || 'text',
-      tableHeaders: q.answer_format?.tableHeaders || undefined,
-    }));
-  };
-  
-  // Fallback questions if no data is loaded from Supabase
-  const page1Questions = [
-    {
-      id: 1,
-      title: "What is the chief complaint?",
-      description: "Limit your response to 50 characters.",
-      responseType: 'text' as const,
-    },
-    {
-      id: 2,
-      title: "List four diagnoses on your differential. Include at least 2 must-not-miss diagnoses.",
-      responseType: 'differential' as const,
-    },
-    {
-      id: 3,
-      title: "Ask five review of system questions to refine your Ddx, and list one underlying diagnosis each may suggest if present.",
-      responseType: 'table' as const,
-      tableHeaders: [['Question', 'Underlying Diagnosis']],
-    }
-  ];
-  
-  // Fallback questions for page 2
-  const page2Questions = [
-    {
-      id: 4,
-      title: "List three pertinent positive/negative findings, the diagnosis it relates to, and whether it makes it more/less likely from the provided history.",
-      responseType: 'table' as const,
-      tableHeaders: [['Pertinent Positive/ Negative', 'Diagnosis it relates to', 'Is the Diagnosis More or Less Likely']],
-    },
-    {
-      id: 5,
-      title: "Besides the vital signs, list four physical exam findings, the diagnosis it relates to, and whether it makes it more/less likely.",
-      responseType: 'table' as const,
-      tableHeaders: [['Physical Exam Finding', 'Diagnosis it relates to', 'Is the Diagnosis More or Less Likely']],
-    }
-  ];
-  
-  // Use database questions if available, otherwise use fallbacks
-  const displayQuestions = questions.length > 0 
-    ? formatQuestionsForDisplay(questions) 
-    : (pageNumber === 1 ? page1Questions : page2Questions);
-  
   // Use case info from the database if available
   const patientWords = caseInfo || "I don't have the energy I used to. I'm still going on my walk around the neighborhood every morning, but it's taking me longer than usual. Sometimes I get short of breath and have to slow down. Other times it feels like my heart is racing or pounding in my chest, even when I'm not walking around.";
   
+  // Additional clinical data for page 2
   const additionalHistory = pageNumber === 2 ? 
     "You ask Mr. Power some additional questions about his symptoms. He denies any chest pain, chest pressure, orthopnea, paroxysmal nocturnal dyspnea, cough, sputum production, wheezing, hemoptysis, fever, chills, dizziness, lightheadedness, syncope, excessive daytime somnolence, tremor, skin or hair changes, heat or cold intolerance, or unintentional weight loss. He does endorse some mild bilateral lower extremity edema over the past few weeks." : undefined;
   
@@ -244,60 +93,51 @@ const ExamPage = () => {
         </div>
       ) : (
         <>
-          <QuestionForm
-            examTitle={examTitle}
-            timeRemaining="59:59"
-            caseNumber={1}
-            caseName={pageNumber === 1 ? "Lauren King" : "MP"}
-            patientInfo={{
-              name: pageNumber === 1 ? "Lauren King" : "Mark Power",
-              pronouns: pageNumber === 1 ? "she/her" : "he/him",
-              age: pageNumber === 1 ? 2 : 75,
-              imageUrl: patientImageUrl
-            }}
-            patientWords={patientWords}
-            questions={displayQuestions}
-            onNext={handleNext}
-            onSubmit={handleSubmit}
-            onAnswerChange={handleAnswerChange}
-            currentAnswers={answers}
-            currentQuestionIndex={currentQuestionIndex}
-            onQuestionNavigation={handleQuestionNavigation}
-          />
-          
-          {pageNumber === 2 && (
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="glass-card p-5">
-                <h3 className="font-medium mb-3">Additional History</h3>
-                <p className="text-sm text-gray-700">{additionalHistory}</p>
-              </div>
-              <div className="glass-card p-5">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-medium mb-3">Past Medical History</h3>
-                    <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
-                      <li>Coronary Artery Disease w/o history of MI</li>
-                      <li>Status post percutaneous coronary intervention with stent 3 years ago</li>
-                      <li>Hypertension</li>
-                      <li>Hypercholesterolemia</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-3">Medications</h3>
-                    <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
-                      <li>Metoprolol</li>
-                      <li>Atorvastatin</li>
-                      <li>Aspirin</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              <div className="glass-card p-5 md:col-span-2">
-                <h3 className="font-medium mb-3">Social History</h3>
-                <p className="text-sm text-gray-700">{socialHistory}</p>
-              </div>
+          <div className="grid grid-cols-5 gap-6 flex-1">
+            <div className="col-span-2">
+              <PatientInfoCard
+                patientInfo={{
+                  name: pageNumber === 1 ? "Lauren King" : "Mark Power",
+                  pronouns: pageNumber === 1 ? "she/her" : "he/him",
+                  age: pageNumber === 1 ? 2 : 75,
+                  imageUrl: patientImageUrl
+                }}
+                caseNumber={caseNumber}
+                patientWords={patientWords}
+              />
             </div>
-          )}
+            
+            <div className="col-span-3">
+              <QuestionForm
+                examTitle={examTitle}
+                timeRemaining="59:59"
+                caseNumber={1}
+                caseName={pageNumber === 1 ? "Lauren King" : "MP"}
+                patientInfo={{
+                  name: pageNumber === 1 ? "Lauren King" : "Mark Power",
+                  pronouns: pageNumber === 1 ? "she/her" : "he/him",
+                  age: pageNumber === 1 ? 2 : 75,
+                  imageUrl: patientImageUrl
+                }}
+                patientWords={patientWords}
+                questions={displayQuestions}
+                onNext={handleNext}
+                onSubmit={handleSubmit}
+                onAnswerChange={handleAnswerChange}
+                currentAnswers={answers}
+                currentQuestionIndex={currentQuestionIndex}
+                onQuestionNavigation={handleQuestionNavigation}
+              />
+            </div>
+          </div>
+          
+          {/* Medical History Section */}
+          <MedicalHistorySection
+            additionalHistory={additionalHistory}
+            pastMedicalHistory={pastMedicalHistory}
+            medications={medications}
+            socialHistory={socialHistory}
+          />
         </>
       )}
     </div>

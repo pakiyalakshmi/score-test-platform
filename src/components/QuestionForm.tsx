@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Clock, FileText, Download } from 'lucide-react';
 
 interface QuestionFormProps {
@@ -24,6 +24,10 @@ interface QuestionFormProps {
   }>;
   onNext: () => void;
   onSubmit: () => void;
+  onAnswerChange?: (questionId: number, value: any) => void;
+  currentAnswers?: Record<string, any>;
+  currentQuestionIndex?: number;
+  onQuestionNavigation?: (index: number) => void;
 }
 
 const QuestionForm: React.FC<QuestionFormProps> = ({
@@ -36,15 +40,33 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   questions,
   onNext,
   onSubmit,
+  onAnswerChange,
+  currentAnswers = {},
+  currentQuestionIndex = 0,
+  onQuestionNavigation
 }) => {
-  const [responses, setResponses] = useState<Record<string, any>>({});
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(currentQuestionIndex || 0);
+  
+  // Update local state when prop changes
+  useEffect(() => {
+    setActiveQuestionIndex(currentQuestionIndex);
+  }, [currentQuestionIndex]);
 
-  const handleInputChange = (questionId: number, value: string) => {
-    setResponses({
-      ...responses,
-      [questionId]: value,
-    });
+  const handleInputChange = (questionId: number, value: any) => {
+    if (onAnswerChange) {
+      onAnswerChange(questionId, value);
+    }
   };
+
+  const handleQuestionClick = (index: number) => {
+    setActiveQuestionIndex(index);
+    if (onQuestionNavigation) {
+      onQuestionNavigation(index);
+    }
+  };
+
+  // Only show the active question
+  const activeQuestion = questions[activeQuestionIndex];
 
   return (
     <div className="flex flex-col h-full animate-fade-in">
@@ -78,127 +100,148 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-6 flex-1">
-        <div className="col-span-2 bg-clinicus-blue text-white rounded-lg overflow-hidden">
-          <div className="p-4 border-b border-white/10">
-            <h2 className="text-lg font-medium">Case {caseNumber}: {caseName}</h2>
-            <div className="flex flex-col gap-1 mt-2">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="w-5 text-right">{i+1}.</span>
-                  <div className={`w-2 h-2 rounded-full ${i < caseNumber ? 'bg-clinicus-gold' : 'bg-white/30'}`}></div>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* Question navigation */}
+      <div className="flex mb-4 space-x-2 overflow-x-auto py-2">
+        {questions.map((question, index) => (
+          <button
+            key={question.id}
+            onClick={() => handleQuestionClick(index)}
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+              index === activeQuestionIndex
+                ? 'bg-clinicus-blue text-white'
+                : currentAnswers[question.id]
+                ? 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            Question {index + 1}
+          </button>
+        ))}
+      </div>
 
-          {patientInfo && (
-            <div className="p-4">
-              {patientInfo.imageUrl && (
-                <div className="mb-4 rounded-lg overflow-hidden max-w-[200px] mx-auto">
-                  <img 
-                    src={patientInfo.imageUrl} 
-                    alt={patientInfo.name} 
-                    className="w-full object-cover"
-                  />
-                </div>
-              )}
-              
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-medium">Case {caseNumber}</h3>
-                <p className="text-white/80">Name: {patientInfo.name}</p>
-                <p className="text-white/80">Pronouns: {patientInfo.pronouns}</p>
-                <p className="text-white/80">Age: {patientInfo.age}</p>
-              </div>
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        {activeQuestion && (
+          <div key={activeQuestion.id}>
+            <h3 className="text-lg font-medium mb-3">{activeQuestionIndex + 1}. {activeQuestion.title}</h3>
+            {activeQuestion.description && (
+              <p className="text-sm text-gray-600 mb-4">{activeQuestion.description}</p>
+            )}
 
-              {patientWords && (
-                <div>
-                  <h3 className="font-medium mb-2 border-b border-white/10 pb-2">Patient's Words</h3>
-                  <p className="text-sm text-white/90 italic">"{patientWords}"</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            {activeQuestion.responseType === 'text' && (
+              <textarea
+                className="w-full border border-gray-300 rounded-md p-3 min-h-[120px]"
+                placeholder="Type your response here..."
+                value={currentAnswers[activeQuestion.id] || ''}
+                onChange={(e) => handleInputChange(activeQuestion.id, e.target.value)}
+              ></textarea>
+            )}
 
-        <div className="col-span-3 rounded-lg border border-gray-200 bg-white p-6">
-          {questions.map((question) => (
-            <div key={question.id} className="mb-8">
-              <h3 className="text-lg font-medium mb-3">{question.id}. {question.title}</h3>
-              {question.description && (
-                <p className="text-sm text-gray-600 mb-4">{question.description}</p>
-              )}
-
-              {question.responseType === 'text' && (
-                <textarea
-                  className="w-full border border-gray-300 rounded-md p-3 min-h-[120px]"
-                  placeholder="Type your response here..."
-                  onChange={(e) => handleInputChange(question.id, e.target.value)}
-                ></textarea>
-              )}
-
-              {question.responseType === 'differential' && (
-                <div className="grid grid-cols-1 gap-2">
-                  {Array.from({ length: 4 }).map((_, i) => (
+            {activeQuestion.responseType === 'differential' && (
+              <div className="grid grid-cols-1 gap-2">
+                {Array.from({ length: 4 }).map((_, i) => {
+                  const answersArray = Array.isArray(currentAnswers[activeQuestion.id]) 
+                    ? currentAnswers[activeQuestion.id] 
+                    : ['', '', '', ''];
+                    
+                  return (
                     <div key={i} className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">{i+1}. </span>
                       <input
                         type="text"
                         className="w-full border border-gray-300 rounded-md p-2"
                         placeholder={`Item ${i+1}`}
-                        onChange={(e) => handleInputChange(question.id, e.target.value)}
+                        value={answersArray[i] || ''}
+                        onChange={(e) => {
+                          const updatedArray = [...(answersArray || ['', '', '', ''])];
+                          updatedArray[i] = e.target.value;
+                          handleInputChange(activeQuestion.id, updatedArray);
+                        }}
                       />
                     </div>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
+            )}
 
-              {question.responseType === 'table' && question.tableHeaders && (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse border border-gray-300">
-                    <thead>
-                      <tr>
-                        {question.tableHeaders[0].map((header, i) => (
-                          <th key={i} className="border border-gray-300 bg-gray-100 p-2 text-sm text-left">
-                            {header}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Array.from({ length: 4 }).map((_, rowIndex) => (
+            {activeQuestion.responseType === 'table' && activeQuestion.tableHeaders && (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300">
+                  <thead>
+                    <tr>
+                      {activeQuestion.tableHeaders[0].map((header, i) => (
+                        <th key={i} className="border border-gray-300 bg-gray-100 p-2 text-sm text-left">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 4 }).map((_, rowIndex) => {
+                      const tableData = currentAnswers[activeQuestion.id] || {};
+                      
+                      return (
                         <tr key={rowIndex}>
-                          {question.tableHeaders && question.tableHeaders[0].map((_, colIndex) => (
+                          {activeQuestion.tableHeaders && activeQuestion.tableHeaders[0].map((_, colIndex) => (
                             <td key={colIndex} className="border border-gray-300 p-2">
                               <input
                                 type="text"
                                 className="w-full border-none focus:outline-none"
-                                onChange={(e) => 
-                                  handleInputChange(
-                                    question.id, 
-                                    { ...responses[question.id], [rowIndex]: e.target.value }
-                                  )
-                                }
+                                value={tableData[rowIndex]?.[colIndex] || ''}
+                                onChange={(e) => {
+                                  const newTableData = {...tableData};
+                                  if (!newTableData[rowIndex]) {
+                                    newTableData[rowIndex] = {};
+                                  }
+                                  newTableData[rowIndex][colIndex] = e.target.value;
+                                  handleInputChange(activeQuestion.id, newTableData);
+                                }}
                               />
                             </td>
                           ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          ))}
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
-          <div className="flex justify-end mt-6">
+        <div className="flex justify-between mt-6">
+          <button 
+            className={`px-4 py-2 rounded-md text-sm font-medium ${
+              activeQuestionIndex > 0 
+                ? 'bg-gray-200 text-gray-800' 
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+            onClick={() => {
+              if (activeQuestionIndex > 0) {
+                handleQuestionClick(activeQuestionIndex - 1);
+              }
+            }}
+            disabled={activeQuestionIndex === 0}
+          >
+            Previous
+          </button>
+
+          {activeQuestionIndex < questions.length - 1 ? (
+            <button 
+              className="px-4 py-2 bg-clinicus-blue text-white rounded-md text-sm font-medium"
+              onClick={() => {
+                handleQuestionClick(activeQuestionIndex + 1);
+              }}
+            >
+              Next Question
+            </button>
+          ) : (
             <button 
               className="gold-button"
               onClick={onNext}
             >
               Next
             </button>
-          </div>
+          )}
         </div>
       </div>
     </div>
