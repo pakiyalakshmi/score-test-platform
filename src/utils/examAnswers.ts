@@ -52,9 +52,24 @@ export const submitExamAnswers = async (answers: Record<string, any>): Promise<b
     }
     */
     
+    // After submission, we now call the calculate-exam-results function
+    // But we don't need to wait for the results here, as we'll fetch them on the results page
+    const { error } = await supabase.functions.invoke('calculate-exam-results', {
+      body: { answers }
+    });
+    
+    if (error) {
+      console.error("Error calling calculate-exam-results:", error);
+      // We'll continue even if there's an error, as the results page will try again
+    }
+    
     return true;
   } catch (err) {
     console.error('Error submitting answers:', err);
     return false;
   }
+};
+
+export const clearExamAnswers = () => {
+  localStorage.removeItem('examAnswers');
 };
