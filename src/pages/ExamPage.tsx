@@ -102,7 +102,7 @@ const ExamPage = () => {
                   age: pageNumber === 1 ? 2 : 75,
                   imageUrl: patientImageUrl
                 }}
-                caseNumber={caseNumber}
+                caseNumber={pageNumber}
                 patientWords={patientWords}
               />
             </div>
@@ -111,7 +111,7 @@ const ExamPage = () => {
               <QuestionForm
                 examTitle={examTitle}
                 timeRemaining="59:59"
-                caseNumber={1}
+                caseNumber={pageNumber}
                 caseName={pageNumber === 1 ? "Lauren King" : "MP"}
                 patientInfo={{
                   name: pageNumber === 1 ? "Lauren King" : "Mark Power",

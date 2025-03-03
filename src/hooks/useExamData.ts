@@ -91,7 +91,7 @@ export const useExamData = (pageNumber: number) => {
             // Find the case information for the current chunk/page
             const chunkData = testData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
             if (chunkData && typeof chunkData === 'object' && 'content' in chunkData) {
-              setCaseInfo(chunkData.content);
+              setCaseInfo(String(chunkData.content)); // Convert to string to fix type error
             }
           } else {
             console.error('Expected case_info to be an array, got:', typeof testData.case_info);
