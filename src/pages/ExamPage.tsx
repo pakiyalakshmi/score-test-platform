@@ -13,6 +13,8 @@ const ExamPage = () => {
   const [questions, setQuestions] = useState<any[]>([]);
   const [caseInfo, setCaseInfo] = useState<string>('');
   const [examTitle, setExamTitle] = useState<string>('Medical Exam');
+  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   
   // Example patient image - in a real app this would come from your data
   const patientImageUrl = "public/lovable-uploads/885815da-14b8-4b48-a843-41e92d404453.png";
@@ -75,18 +77,94 @@ const ExamPage = () => {
   }, [pageNumber]);
   
   const handleNext = () => {
+    // Check if all questions have been answered
+    const displayQuestions = questions.length > 0 
+      ? formatQuestionsForDisplay(questions) 
+      : (pageNumber === 1 ? page1Questions : page2Questions);
+      
+    // Check if all answers are provided
+    const allAnswered = displayQuestions.every(q => answers[q.id] && 
+      (typeof answers[q.id] === 'string' ? answers[q.id].trim() !== '' : 
+       Array.isArray(answers[q.id]) ? answers[q.id].length > 0 : true));
+       
+    if (!allAnswered) {
+      toast.error("Please answer all questions before proceeding");
+      return;
+    }
+    
+    // Save answers to localStorage for potential later use
+    const storedAnswers = JSON.parse(localStorage.getItem('examAnswers') || '{}');
+    const updatedAnswers = { ...storedAnswers, ...answers };
+    localStorage.setItem('examAnswers', JSON.stringify(updatedAnswers));
+    
     if (pageNumber === 1) {
       navigate('/exam/2');
       toast.success("Page 1 completed");
     } else {
+      // Process and submit all answers
+      const allAnswers = JSON.parse(localStorage.getItem('examAnswers') || '{}');
+      submitExamAnswers(allAnswers);
       navigate('/student/results');
       toast.success("Exam submitted successfully");
     }
   };
   
+  const submitExamAnswers = async (answers: Record<string, any>) => {
+    try {
+      // Transform answers to the format expected by the database
+      const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
+        question_id: parseInt(questionId),
+        student_answer: answer,
+      }));
+      
+      const { error } = await supabase
+        .from('student_answers')
+        .insert(formattedAnswers);
+        
+      if (error) {
+        throw error;
+      }
+    } catch (err) {
+      console.error('Error submitting answers:', err);
+      // Continue navigation even if there's an error to not block the user
+    }
+  };
+  
   const handleSubmit = () => {
+    // Check if all answers are provided
+    const displayQuestions = questions.length > 0 
+      ? formatQuestionsForDisplay(questions) 
+      : (pageNumber === 1 ? page1Questions : page2Questions);
+      
+    const allAnswered = displayQuestions.every(q => answers[q.id] && 
+      (typeof answers[q.id] === 'string' ? answers[q.id].trim() !== '' : 
+       Array.isArray(answers[q.id]) ? answers[q.id].length > 0 : true));
+       
+    if (!allAnswered) {
+      toast.error("Please answer all questions before submitting");
+      return;
+    }
+    
+    // Save answers and navigate
+    const storedAnswers = JSON.parse(localStorage.getItem('examAnswers') || '{}');
+    const updatedAnswers = { ...storedAnswers, ...answers };
+    localStorage.setItem('examAnswers', JSON.stringify(updatedAnswers));
+    
+    // Submit all answers
+    submitExamAnswers(updatedAnswers);
     navigate('/student/results');
     toast.success("Exam submitted successfully");
+  };
+  
+  const handleAnswerChange = (questionId: number, answer: any) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: answer
+    }));
+  };
+  
+  const handleQuestionNavigation = (index: number) => {
+    setCurrentQuestionIndex(index);
   };
   
   // Transform database questions into the format expected by QuestionForm
@@ -181,6 +259,10 @@ const ExamPage = () => {
             questions={displayQuestions}
             onNext={handleNext}
             onSubmit={handleSubmit}
+            onAnswerChange={handleAnswerChange}
+            currentAnswers={answers}
+            currentQuestionIndex={currentQuestionIndex}
+            onQuestionNavigation={handleQuestionNavigation}
           />
           
           {pageNumber === 2 && (
