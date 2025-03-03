@@ -36,10 +36,15 @@ const ExamPage = () => {
         if (testData) {
           setExamTitle(testData.test_name);
           
-          // Find the case information for the current chunk/page
-          const chunkData = testData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
-          if (chunkData) {
-            setCaseInfo(chunkData.content);
+          // Fix: Type check the case_info before using find method
+          if (Array.isArray(testData.case_info)) {
+            // Find the case information for the current chunk/page
+            const chunkData = testData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
+            if (chunkData) {
+              setCaseInfo(chunkData.content);
+            }
+          } else {
+            console.error('Expected case_info to be an array, got:', typeof testData.case_info);
           }
         }
         
