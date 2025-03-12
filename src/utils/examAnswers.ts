@@ -63,6 +63,9 @@ export const submitExamAnswers = async (answers: Record<string, any>): Promise<b
       // We'll continue even if there's an error, as the results page will try again
     }
     
+    // Clear answers after successful submission
+    clearExamAnswers();
+    
     return true;
   } catch (err) {
     console.error('Error submitting answers:', err);
@@ -72,4 +75,10 @@ export const submitExamAnswers = async (answers: Record<string, any>): Promise<b
 
 export const clearExamAnswers = () => {
   localStorage.removeItem('examAnswers');
+};
+
+// New function to initialize a new exam session
+export const initializeNewExam = () => {
+  clearExamAnswers();
+  console.log('Exam answers cleared - starting fresh exam');
 };

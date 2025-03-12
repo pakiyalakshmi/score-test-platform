@@ -7,7 +7,7 @@ import PatientInfoCard from '../components/exam/PatientInfoCard';
 import MedicalHistorySection from '../components/exam/MedicalHistorySection';
 import { useExamData } from '../hooks/useExamData';
 import { useTimer } from '../hooks/useTimer';
-import { saveAnswers, getAllAnswers, checkAllQuestionsAnswered, submitExamAnswers } from '../utils/examAnswers';
+import { saveAnswers, getAllAnswers, checkAllQuestionsAnswered, submitExamAnswers, clearExamAnswers } from '../utils/examAnswers';
 
 const ExamPage = () => {
   const { page } = useParams<{ page: string }>();
@@ -18,6 +18,19 @@ const ExamPage = () => {
   
   // Initialize the exam timer - 60 minutes by default
   const { displayTime, isExpired } = useTimer(60, 0);
+  
+  // Clear previous answers on initial page load
+  useEffect(() => {
+    // Only clear answers when first coming to the exam (page 1)
+    if (pageNumber === 1) {
+      clearExamAnswers();
+      console.log('Starting new exam, cleared previous answers');
+    }
+    
+    // Load any answers that may exist (will be empty for a new exam)
+    const savedAnswers = getAllAnswers();
+    setAnswers(savedAnswers);
+  }, []);
   
   // Reset question index when page changes
   useEffect(() => {
@@ -43,10 +56,12 @@ const ExamPage = () => {
   // Use our custom hook to fetch exam data
   const { loading, examTitle, caseInfo, displayQuestions } = useExamData(pageNumber);
   
-  // Load previous answers from localStorage when component mounts or page changes
+  // Load previous answers from localStorage when page changes
   useEffect(() => {
-    const savedAnswers = getAllAnswers();
-    setAnswers(savedAnswers);
+    if (pageNumber > 1) {
+      const savedAnswers = getAllAnswers();
+      setAnswers(savedAnswers);
+    }
   }, [pageNumber]);
   
   // Example patient image - in a real app this would come from your data
@@ -123,8 +138,22 @@ const ExamPage = () => {
           <p className="ml-4 text-gray-600">Loading exam questions...</p>
         </div>
       ) : (
-        <>
-          <div className="grid grid-cols-12 gap-6 flex-1">
+        <div className="flex flex-col space-y-6">
+          {/* Patient Info Section - Now at the top */}
+          <div className="w-full bg-white p-4 rounded-lg shadow-sm">
+            <PatientInfoCard
+              patientInfo={{
+                name: pageNumber === 1 ? "Lauren King" : "Mark Power",
+                pronouns: pageNumber === 1 ? "she/her" : "he/him",
+                age: pageNumber === 1 ? 2 : 75,
+                imageUrl: patientImageUrl
+              }}
+              caseNumber={pageNumber}
+              patientWords={patientWords}
+            />
+          </div>
+
+          <div className="grid grid-cols-12 gap-6">
             {/* Navigation Column */}
             <div className="col-span-2 bg-white rounded-lg border border-gray-200 p-4">
               <h3 className="font-medium text-gray-700 mb-3">Questions</h3>
@@ -147,22 +176,8 @@ const ExamPage = () => {
               </div>
             </div>
             
-            {/* Patient Info Column */}
-            <div className="col-span-3">
-              <PatientInfoCard
-                patientInfo={{
-                  name: pageNumber === 1 ? "Lauren King" : "Mark Power",
-                  pronouns: pageNumber === 1 ? "she/her" : "he/him",
-                  age: pageNumber === 1 ? 2 : 75,
-                  imageUrl: patientImageUrl
-                }}
-                caseNumber={pageNumber}
-                patientWords={patientWords}
-              />
-            </div>
-            
             {/* Question Content Column */}
-            <div className="col-span-7">
+            <div className="col-span-10">
               <QuestionForm
                 examTitle={examTitle}
                 timeRemaining={displayTime}
@@ -186,7 +201,7 @@ const ExamPage = () => {
             medications={medications}
             socialHistory={socialHistory}
           />
-        </>
+        </div>
       )}
     </div>
   );
