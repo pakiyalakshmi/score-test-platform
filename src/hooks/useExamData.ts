@@ -55,6 +55,7 @@ export const useExamData = (pageNumber: number) => {
   const [questions, setQuestions] = useState<any[]>([]);
   const [caseInfo, setCaseInfo] = useState<string>('');
   const [examTitle, setExamTitle] = useState<string>('Medical Exam');
+  const [currentPage, setCurrentPage] = useState<number>(pageNumber);
 
   // Transform database questions into the format expected by QuestionForm
   const formatQuestionsForDisplay = (questions: any[]): ExamQuestion[] => {
@@ -66,6 +67,16 @@ export const useExamData = (pageNumber: number) => {
       tableHeaders: q.answer_format?.tableHeaders || undefined,
     }));
   };
+
+  // Reset state when page changes
+  useEffect(() => {
+    if (currentPage !== pageNumber) {
+      setLoading(true);
+      setQuestions([]);
+      setCaseInfo('');
+      setCurrentPage(pageNumber);
+    }
+  }, [pageNumber, currentPage]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -110,8 +121,10 @@ export const useExamData = (pageNumber: number) => {
         }
         
         if (questionData) {
-          console.log('Fetched exam questions:', questionData);
+          console.log(`Fetched exam questions for page ${pageNumber}:`, questionData);
           setQuestions(questionData);
+        } else {
+          console.log(`No questions found for page ${pageNumber}, using fallbacks`);
         }
       } catch (error) {
         console.error('Error fetching data:', error);

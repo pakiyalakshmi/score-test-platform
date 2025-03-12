@@ -19,6 +19,11 @@ const ExamPage = () => {
   // Initialize the exam timer - 60 minutes by default
   const { displayTime, isExpired } = useTimer(60, 0);
   
+  // Reset question index when page changes
+  useEffect(() => {
+    setCurrentQuestionIndex(0);
+  }, [pageNumber]);
+  
   // Auto-submit if timer expires
   useEffect(() => {
     if (isExpired) {
@@ -37,6 +42,12 @@ const ExamPage = () => {
   
   // Use our custom hook to fetch exam data
   const { loading, examTitle, caseInfo, displayQuestions } = useExamData(pageNumber);
+  
+  // Load previous answers from localStorage when component mounts or page changes
+  useEffect(() => {
+    const savedAnswers = getAllAnswers();
+    setAnswers(savedAnswers);
+  }, [pageNumber]);
   
   // Example patient image - in a real app this would come from your data
   const patientImageUrl = "public/lovable-uploads/885815da-14b8-4b48-a843-41e92d404453.png";
