@@ -36,6 +36,10 @@ export const submitExamAnswers = async (answers: Record<string, any>): Promise<b
       student_answer: answer,
     }));
     
+    // Store the completion time
+    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    localStorage.setItem('examCompletionTime', currentTime);
+    
     // Note: student_answers table must exist in your Supabase database
     // This is a placeholder - in a real app you'd use the actual schema
     // Since this is just for demo, we'll continue without actually inserting
@@ -75,10 +79,14 @@ export const submitExamAnswers = async (answers: Record<string, any>): Promise<b
 
 export const clearExamAnswers = () => {
   localStorage.removeItem('examAnswers');
+  // Don't clear the completion time when clearing answers
+  // as we want it to persist for the results page
 };
 
 // New function to initialize a new exam session
 export const initializeNewExam = () => {
   clearExamAnswers();
+  localStorage.removeItem('examCompletionTime'); // Clear completion time when starting a new exam
   console.log('Exam answers cleared - starting fresh exam');
 };
+

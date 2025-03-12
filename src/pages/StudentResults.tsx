@@ -12,6 +12,7 @@ const StudentResults = () => {
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<any>(null);
   const [feedbackExpanded, setFeedbackExpanded] = useState<Record<string, boolean>>({});
+  const [completionTime, setCompletionTime] = useState<string>("");
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -25,6 +26,15 @@ const StudentResults = () => {
           toast.error("No exam answers found");
           setLoading(false);
           return;
+        }
+        
+        // Get completion time from localStorage if available
+        const storedTime = localStorage.getItem('examCompletionTime');
+        if (storedTime) {
+          setCompletionTime(storedTime);
+        } else {
+          // If no stored time, use current time as fallback
+          setCompletionTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
         }
         
         // Call the edge function to calculate results
@@ -90,6 +100,12 @@ const StudentResults = () => {
                 <CircleProgress percentage={results.percentageScore} />
                 <h2 className="text-4xl font-bold mt-2 text-clinicus-blue">{results.percentageScore}%</h2>
                 <p className="text-gray-500 mt-2">{results.totalScore} out of {results.maxPossibleScore} points</p>
+                {completionTime && (
+                  <div className="flex items-center mt-3 text-gray-500">
+                    <Clock size={16} className="mr-2" />
+                    <span>Finished at {completionTime}</span>
+                  </div>
+                )}
               </div>
               
               <div className="glass-card p-6">
