@@ -32,7 +32,7 @@ const ExamHeader: React.FC<ExamHeaderProps> = ({
           <span className="text-sm text-gray-600">Resources</span>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100">
-          <Clock size={16} className="text-red-500" />
+          <Clock size={16} className={timeRemaining.startsWith("0:") ? "text-red-500 animate-pulse" : "text-red-500"} />
           <span className="text-sm font-medium text-gray-800">{timeRemaining}</span>
         </div>
         <button 

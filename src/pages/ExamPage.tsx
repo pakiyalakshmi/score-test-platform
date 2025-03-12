@@ -1,11 +1,12 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import QuestionForm from '../components/QuestionForm';
 import PatientInfoCard from '../components/exam/PatientInfoCard';
 import MedicalHistorySection from '../components/exam/MedicalHistorySection';
 import { useExamData } from '../hooks/useExamData';
+import { useTimer } from '../hooks/useTimer';
 import { saveAnswers, getAllAnswers, checkAllQuestionsAnswered, submitExamAnswers } from '../utils/examAnswers';
 
 const ExamPage = () => {
@@ -14,6 +15,25 @@ const ExamPage = () => {
   const navigate = useNavigate();
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  
+  // Initialize the exam timer - 60 minutes by default
+  const { displayTime, isExpired } = useTimer(60, 0);
+  
+  // Auto-submit if timer expires
+  useEffect(() => {
+    if (isExpired) {
+      toast.error("Time's up! Your exam is being submitted.", {
+        duration: 5000,
+      });
+      
+      // Auto-submit after a short delay to allow the user to see the message
+      const timer = setTimeout(() => {
+        handleSubmit();
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isExpired]);
   
   // Use our custom hook to fetch exam data
   const { loading, examTitle, caseInfo, displayQuestions } = useExamData(pageNumber);
@@ -134,7 +154,7 @@ const ExamPage = () => {
             <div className="col-span-7">
               <QuestionForm
                 examTitle={examTitle}
-                timeRemaining="59:59"
+                timeRemaining={displayTime}
                 caseNumber={pageNumber}
                 caseName={pageNumber === 1 ? "Lauren King" : "MP"}
                 questions={displayQuestions}
