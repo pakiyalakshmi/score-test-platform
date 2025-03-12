@@ -93,8 +93,31 @@ const ExamPage = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-5 gap-6 flex-1">
-            <div className="col-span-2">
+          <div className="grid grid-cols-12 gap-6 flex-1">
+            {/* Navigation Column */}
+            <div className="col-span-2 bg-white rounded-lg border border-gray-200 p-4">
+              <h3 className="font-medium text-gray-700 mb-3">Questions</h3>
+              <div className="flex flex-col space-y-2">
+                {displayQuestions.map((question, index) => (
+                  <button
+                    key={question.id}
+                    onClick={() => handleQuestionNavigation(index)}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors text-left ${
+                      index === currentQuestionIndex
+                        ? 'bg-clinicus-blue text-white'
+                        : answers[question.id]
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    Question {index + 1}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Patient Info Column */}
+            <div className="col-span-3">
               <PatientInfoCard
                 patientInfo={{
                   name: pageNumber === 1 ? "Lauren King" : "Mark Power",
@@ -107,19 +130,13 @@ const ExamPage = () => {
               />
             </div>
             
-            <div className="col-span-3">
+            {/* Question Content Column */}
+            <div className="col-span-7">
               <QuestionForm
                 examTitle={examTitle}
                 timeRemaining="59:59"
                 caseNumber={pageNumber}
                 caseName={pageNumber === 1 ? "Lauren King" : "MP"}
-                patientInfo={{
-                  name: pageNumber === 1 ? "Lauren King" : "Mark Power",
-                  pronouns: pageNumber === 1 ? "she/her" : "he/him",
-                  age: pageNumber === 1 ? 2 : 75,
-                  imageUrl: patientImageUrl
-                }}
-                patientWords={patientWords}
                 questions={displayQuestions}
                 onNext={handleNext}
                 onSubmit={handleSubmit}

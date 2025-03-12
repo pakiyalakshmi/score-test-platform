@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import ExamHeader from './question-form/ExamHeader';
-import QuestionNavigation from './question-form/QuestionNavigation';
 import QuestionContent from './question-form/QuestionContent';
 import QuestionControls from './question-form/QuestionControls';
 
@@ -38,8 +37,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   timeRemaining,
   caseNumber,
   caseName,
-  patientInfo,
-  patientWords,
   questions,
   onNext,
   onSubmit,
@@ -61,22 +58,23 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     }
   };
 
-  const handleQuestionClick = (index: number) => {
-    setActiveQuestionIndex(index);
-    if (onQuestionNavigation) {
-      onQuestionNavigation(index);
-    }
-  };
-
   const handleNextQuestion = () => {
     if (activeQuestionIndex < questions.length - 1) {
-      handleQuestionClick(activeQuestionIndex + 1);
+      if (onQuestionNavigation) {
+        onQuestionNavigation(activeQuestionIndex + 1);
+      } else {
+        setActiveQuestionIndex(activeQuestionIndex + 1);
+      }
     }
   };
 
   const handlePreviousQuestion = () => {
     if (activeQuestionIndex > 0) {
-      handleQuestionClick(activeQuestionIndex - 1);
+      if (onQuestionNavigation) {
+        onQuestionNavigation(activeQuestionIndex - 1);
+      } else {
+        setActiveQuestionIndex(activeQuestionIndex - 1);
+      }
     }
   };
 
@@ -89,13 +87,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         examTitle={examTitle} 
         timeRemaining={timeRemaining} 
         onSubmit={onSubmit} 
-      />
-
-      <QuestionNavigation 
-        questions={questions}
-        activeQuestionIndex={activeQuestionIndex}
-        currentAnswers={currentAnswers}
-        onQuestionClick={handleQuestionClick}
       />
 
       <div className="rounded-lg border border-gray-200 bg-white p-6">
