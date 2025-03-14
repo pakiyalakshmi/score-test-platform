@@ -153,6 +153,16 @@ const ExamPage = () => {
             />
           </div>
           
+          {/* Medical History Section - right below the blue box */}
+          <div className="w-full">
+            <MedicalHistorySection
+              additionalHistory={additionalHistory}
+              pastMedicalHistory={pastMedicalHistory}
+              medications={medications}
+              socialHistory={socialHistory}
+            />
+          </div>
+          
           <div className="grid grid-cols-12 gap-6">
             {/* Main content column */}
             <div className="col-span-12">
@@ -198,16 +208,6 @@ const ExamPage = () => {
                 </div>
               </div>
             </div>
-          </div>
-          
-          {/* Medical History Section - now below the main table */}
-          <div className="w-full">
-            <MedicalHistorySection
-              additionalHistory={additionalHistory}
-              pastMedicalHistory={pastMedicalHistory}
-              medications={medications}
-              socialHistory={socialHistory}
-            />
           </div>
         </div>
       )}
