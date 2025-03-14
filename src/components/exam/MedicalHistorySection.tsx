@@ -19,7 +19,7 @@ const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
   }
   
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {additionalHistory && (
         <div className="glass-card p-5">
           <h3 className="font-medium mb-3">Additional History</h3>
