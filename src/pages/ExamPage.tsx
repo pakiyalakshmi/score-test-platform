@@ -139,7 +139,7 @@ const ExamPage = () => {
         </div>
       ) : (
         <div className="flex flex-col space-y-6">
-          {/* Patient Info Section - Now at the top */}
+          {/* Patient Info Section - at the top */}
           <div className="w-full bg-white p-4 rounded-lg shadow-sm">
             <PatientInfoCard
               patientInfo={{
@@ -152,55 +152,62 @@ const ExamPage = () => {
               patientWords={patientWords}
             />
           </div>
-
+          
           <div className="grid grid-cols-12 gap-6">
-            {/* Navigation Column */}
-            <div className="col-span-2 bg-white rounded-lg border border-gray-200 p-4">
-              <h3 className="font-medium text-gray-700 mb-3">Questions</h3>
-              <div className="flex flex-col space-y-2">
-                {displayQuestions.map((question, index) => (
-                  <button
-                    key={question.id}
-                    onClick={() => handleQuestionNavigation(index)}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors text-left ${
-                      index === currentQuestionIndex
-                        ? 'bg-clinicus-blue text-white'
-                        : answers[question.id]
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    Question {index + 1}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            {/* Question Content Column */}
-            <div className="col-span-10">
-              <QuestionForm
-                examTitle={examTitle}
-                timeRemaining={displayTime}
-                caseNumber={pageNumber}
-                caseName={pageNumber === 1 ? "Lauren King" : "MP"}
-                questions={displayQuestions}
-                onNext={handleNext}
-                onSubmit={handleSubmit}
-                onAnswerChange={handleAnswerChange}
-                currentAnswers={answers}
-                currentQuestionIndex={currentQuestionIndex}
-                onQuestionNavigation={handleQuestionNavigation}
+            {/* Medical History Section - on the left, above questions */}
+            <div className="col-span-12 md:col-span-4 lg:col-span-3">
+              <MedicalHistorySection
+                additionalHistory={additionalHistory}
+                pastMedicalHistory={pastMedicalHistory}
+                medications={medications}
+                socialHistory={socialHistory}
               />
             </div>
+            
+            <div className="col-span-12 md:col-span-8 lg:col-span-9">
+              {/* Navigation and Question Content */}
+              <div className="grid grid-cols-12 gap-6">
+                {/* Navigation Column */}
+                <div className="col-span-2 bg-white rounded-lg border border-gray-200 p-4">
+                  <h3 className="font-medium text-gray-700 mb-3">Questions</h3>
+                  <div className="flex flex-col space-y-2">
+                    {displayQuestions.map((question, index) => (
+                      <button
+                        key={question.id}
+                        onClick={() => handleQuestionNavigation(index)}
+                        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors text-left ${
+                          index === currentQuestionIndex
+                            ? 'bg-clinicus-blue text-white'
+                            : answers[question.id]
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        Question {index + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Question Content Column */}
+                <div className="col-span-10">
+                  <QuestionForm
+                    examTitle={examTitle}
+                    timeRemaining={displayTime}
+                    caseNumber={pageNumber}
+                    caseName={pageNumber === 1 ? "Lauren King" : "MP"}
+                    questions={displayQuestions}
+                    onNext={handleNext}
+                    onSubmit={handleSubmit}
+                    onAnswerChange={handleAnswerChange}
+                    currentAnswers={answers}
+                    currentQuestionIndex={currentQuestionIndex}
+                    onQuestionNavigation={handleQuestionNavigation}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-          
-          {/* Medical History Section */}
-          <MedicalHistorySection
-            additionalHistory={additionalHistory}
-            pastMedicalHistory={pastMedicalHistory}
-            medications={medications}
-            socialHistory={socialHistory}
-          />
         </div>
       )}
     </div>
