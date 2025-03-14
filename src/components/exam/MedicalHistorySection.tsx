@@ -60,9 +60,8 @@ const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
         )}
       </div>
       
-      {/* Sample Table for Question 1 - Shows below medical history */}
+      {/* Table for Question 1 */}
       <div className="glass-card p-5">
-        <h3 className="font-medium mb-3">1. List three pertinent positive/negative findings, the diagnosis it relates to, and whether it makes it more/less likely from the provided history.</h3>
         <Table>
           <TableHeader>
             <TableRow>
