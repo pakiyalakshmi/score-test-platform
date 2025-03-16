@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import StudentHome from "./pages/StudentHome";
 import FacultyHome from "./pages/FacultyHome";
 import StudentResults from "./pages/StudentResults";
+import TestsPage from "./pages/TestsPage";
 import ExamPage from "./pages/ExamPage";
 import NotFound from "./pages/NotFound";
 
@@ -26,6 +27,7 @@ const App = () => (
           {/* Student Routes */}
           <Route path="/student" element={<StudentHome />} />
           <Route path="/student/results" element={<StudentResults />} />
+          <Route path="/student/tests" element={<TestsPage />} />
           <Route path="/student/exam/:examId" element={<Navigate to="/exam/1" replace />} />
           
           {/* Faculty Routes */}
