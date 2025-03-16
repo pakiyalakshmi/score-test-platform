@@ -1,8 +1,18 @@
 
+import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import ExamCard from "../components/ExamCard";
+import { getAllAnswers } from "../utils/examAnswers";
 
 const StudentHome = () => {
+  const [hasUnfinishedExam, setHasUnfinishedExam] = useState(false);
+  
+  useEffect(() => {
+    // Check if there are any saved answers in localStorage
+    const savedAnswers = getAllAnswers();
+    setHasUnfinishedExam(Object.keys(savedAnswers).length > 0);
+  }, []);
+  
   return (
     <Layout 
       userType="student"
@@ -16,6 +26,17 @@ const StudentHome = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          {hasUnfinishedExam && (
+            <ExamCard 
+              title="Circulation Block CBL Final"
+              subtitle="Continue Unfinished Exam"
+              hours={1}
+              questions={36}
+              link="/exam/2"
+              buttonText="Continue"
+            />
+          )}
+          
           <ExamCard 
             title="Circulation Block CBL Final"
             subtitle="Upcoming Exam"

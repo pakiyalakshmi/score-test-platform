@@ -59,37 +59,6 @@ const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
           </div>
         )}
       </div>
-      
-      {/* Table for Question 1 */}
-      <div className="glass-card p-5">
-        <h3 className="font-medium mb-3">Question 1</h3>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Pertinent Positive/ Negative</TableHead>
-              <TableHead>Diagnosis it relates to</TableHead>
-              <TableHead>Is the Diagnosis More or Less Likely</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell></TableCell>
-              <TableCell></TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell></TableCell>
-              <TableCell></TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell></TableCell>
-              <TableCell></TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
     </div>
   );
 };
