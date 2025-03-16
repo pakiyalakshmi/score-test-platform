@@ -62,6 +62,7 @@ const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
       
       {/* Table for Question 1 */}
       <div className="glass-card p-5">
+        <h3 className="font-medium mb-3">Question 1</h3>
         <Table>
           <TableHeader>
             <TableRow>
