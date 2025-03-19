@@ -131,16 +131,16 @@ const ExamPage = () => {
     "Mr. Power is a retired engineer. He is married and has one adult child. Mr. Power smoked 1 pack of cigarettes per day from about age 20 to 35 and does not currently smoke. He denies alcohol or drug use. He exercises by walking 2 miles every day. He tries to eat a diet low in sodium and high in fruits and vegetables." : undefined;
   
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen bg-gray-50 p-2 md:p-4 lg:p-6">
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-clinicus-blue"></div>
           <p className="ml-4 text-gray-600">Loading exam questions...</p>
         </div>
       ) : (
-        <div className="flex flex-col space-y-6">
+        <div className="flex flex-col space-y-4">
           {/* Patient Info Section - at the top */}
-          <div className="w-full bg-white p-4 rounded-lg shadow-sm">
+          <div className="w-full bg-white p-3 md:p-4 rounded-lg shadow-sm">
             <PatientInfoCard
               patientInfo={{
                 name: pageNumber === 1 ? "Lauren King" : "Mark Power",
@@ -153,30 +153,34 @@ const ExamPage = () => {
             />
           </div>
           
-          {/* Medical History Section - right below the blue box */}
-          <div className="w-full">
-            <MedicalHistorySection
-              additionalHistory={additionalHistory}
-              pastMedicalHistory={pastMedicalHistory}
-              medications={medications}
-              socialHistory={socialHistory}
-            />
-          </div>
-          
-          <div className="grid grid-cols-12 gap-6">
-            {/* Main content column */}
-            <div className="col-span-12">
-              {/* Navigation and Question Content */}
-              <div className="grid grid-cols-12 gap-6">
+          {/* Main content - side by side layout */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+            {/* Left column for medical history - takes 1/3 on desktop */}
+            <div className="md:col-span-4 lg:col-span-3 space-y-2">
+              <h2 className="text-xl font-semibold text-clinicus-blue mb-2">Patient Information</h2>
+              <MedicalHistorySection
+                additionalHistory={additionalHistory}
+                pastMedicalHistory={pastMedicalHistory}
+                medications={medications}
+                socialHistory={socialHistory}
+              />
+            </div>
+            
+            {/* Right column for questions - takes 2/3 on desktop */}
+            <div className="md:col-span-8 lg:col-span-9">
+              <h2 className="text-xl font-semibold text-clinicus-blue mb-2">Cystic Fibrosis Sample Exam</h2>
+              
+              {/* Questions column layout */}
+              <div className="grid grid-cols-12 gap-4">
                 {/* Navigation Column */}
-                <div className="col-span-2 bg-white rounded-lg border border-gray-200 p-4">
-                  <h3 className="font-medium text-gray-700 mb-3">Questions</h3>
-                  <div className="flex flex-col space-y-2">
+                <div className="col-span-3 lg:col-span-2 bg-white rounded-lg border border-gray-200 p-2 md:p-3">
+                  <h3 className="font-medium text-gray-700 text-sm mb-2">Questions</h3>
+                  <div className="flex flex-col space-y-1.5">
                     {displayQuestions.map((question, index) => (
                       <button
                         key={question.id}
                         onClick={() => handleQuestionNavigation(index)}
-                        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors text-left ${
+                        className={`px-2 py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors text-left ${
                           index === currentQuestionIndex
                             ? 'bg-clinicus-blue text-white'
                             : answers[question.id]
@@ -184,14 +188,14 @@ const ExamPage = () => {
                             : 'bg-gray-100 text-gray-600'
                         }`}
                       >
-                        Question {index + 1}
+                        Q {index + 1}
                       </button>
                     ))}
                   </div>
                 </div>
                 
                 {/* Question Content Column */}
-                <div className="col-span-10">
+                <div className="col-span-9 lg:col-span-10">
                   <QuestionForm
                     examTitle={examTitle}
                     timeRemaining={displayTime}
