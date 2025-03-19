@@ -156,27 +156,13 @@ const ExamPage = () => {
             />
           </div>
           
-          {/* Main content - resizable layout */}
+          {/* Main content - resizable layout with flipped panels */}
           <ResizablePanelGroup
             direction="horizontal"
             className="min-h-[600px] w-full rounded-lg border"
           >
-            {/* Left panel for medical history - default 30% width */}
-            <ResizablePanel defaultSize={30} minSize={20} className="bg-white p-4 shadow-sm">
-              <h2 className="text-xl font-semibold text-clinicus-blue mb-3">Patient Information</h2>
-              <MedicalHistorySection
-                additionalHistory={additionalHistory}
-                pastMedicalHistory={pastMedicalHistory}
-                medications={medications}
-                socialHistory={socialHistory}
-              />
-            </ResizablePanel>
-            
-            {/* Resizable handle */}
-            <ResizableHandle withHandle />
-            
-            {/* Right panel for questions - default 70% width */}
-            <ResizablePanel defaultSize={70} minSize={40} className="bg-white">
+            {/* Left panel for questions - default 60% width */}
+            <ResizablePanel defaultSize={60} minSize={40} className="bg-white">
               <div className="p-4">
                 <h2 className="text-xl font-semibold text-clinicus-blue mb-3">{examTitle}</h2>
                 
@@ -222,6 +208,20 @@ const ExamPage = () => {
                   </div>
                 </div>
               </div>
+            </ResizablePanel>
+            
+            {/* Resizable handle */}
+            <ResizableHandle withHandle />
+            
+            {/* Right panel for medical history - default 40% width */}
+            <ResizablePanel defaultSize={40} minSize={30} className="bg-white p-4 shadow-sm">
+              <h2 className="text-xl font-semibold text-clinicus-blue mb-3">Patient Information</h2>
+              <MedicalHistorySection
+                additionalHistory={additionalHistory}
+                pastMedicalHistory={pastMedicalHistory}
+                medications={medications}
+                socialHistory={socialHistory}
+              />
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>
