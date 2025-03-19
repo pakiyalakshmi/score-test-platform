@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 
@@ -16,17 +16,30 @@ const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
   medications,
   socialHistory
 }) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if we're on mobile on component mount and when window resizes
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Initial check
+    checkMobile();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
   if (!additionalHistory && !pastMedicalHistory && !medications && !socialHistory) {
     return null;
   }
   
-  // For mobile devices, use tabs to save space
-  const isMobileView = () => {
-    return window.innerWidth < 768;
-  };
-  
   // If we're on mobile, render tabs interface
-  if (isMobileView()) {
+  if (isMobile) {
     return (
       <div className="w-full">
         <Tabs defaultValue="additional" className="w-full">
@@ -39,18 +52,18 @@ const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
           
           <TabsContent value="additional" className="mt-0">
             {additionalHistory && (
-              <div className="glass-card p-3">
-                <h3 className="font-medium mb-2 text-sm">Additional History</h3>
-                <p className="text-xs text-gray-700 whitespace-pre-wrap">{additionalHistory}</p>
+              <div className="glass-card p-4">
+                <h3 className="font-medium mb-2 text-base text-clinicus-blue">Additional History</h3>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{additionalHistory}</p>
               </div>
             )}
           </TabsContent>
           
           <TabsContent value="past" className="mt-0">
             {pastMedicalHistory && (
-              <div className="glass-card p-3">
-                <h3 className="font-medium mb-2 text-sm">Past Medical History</h3>
-                <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
+              <div className="glass-card p-4">
+                <h3 className="font-medium mb-2 text-base text-clinicus-blue">Past Medical History</h3>
+                <ul className="text-sm text-gray-700 list-disc pl-5 space-y-2 leading-relaxed">
                   <li>Coronary Artery Disease w/o history of MI</li>
                   <li>Status post percutaneous coronary intervention with stent 3 years ago</li>
                   <li>Hypertension</li>
@@ -62,9 +75,9 @@ const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
           
           <TabsContent value="meds" className="mt-0">
             {medications && (
-              <div className="glass-card p-3">
-                <h3 className="font-medium mb-2 text-sm">Medications</h3>
-                <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
+              <div className="glass-card p-4">
+                <h3 className="font-medium mb-2 text-base text-clinicus-blue">Medications</h3>
+                <ul className="text-sm text-gray-700 list-disc pl-5 space-y-2 leading-relaxed">
                   <li>Metoprolol</li>
                   <li>Atorvastatin</li>
                   <li>Aspirin</li>
@@ -75,9 +88,9 @@ const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
           
           <TabsContent value="social" className="mt-0">
             {socialHistory && (
-              <div className="glass-card p-3">
-                <h3 className="font-medium mb-2 text-sm">Social History</h3>
-                <p className="text-xs text-gray-700 whitespace-pre-wrap">{socialHistory}</p>
+              <div className="glass-card p-4">
+                <h3 className="font-medium mb-2 text-base text-clinicus-blue">Social History</h3>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{socialHistory}</p>
               </div>
             )}
           </TabsContent>
@@ -88,18 +101,18 @@ const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
   
   // For desktop view, show cards in grid layout
   return (
-    <div className="space-y-3 w-full">
+    <div className="space-y-4 w-full">
       {additionalHistory && (
-        <div className="glass-card p-3">
-          <h3 className="font-medium mb-2 text-sm">Additional History</h3>
-          <p className="text-xs text-gray-700 whitespace-pre-wrap">{additionalHistory}</p>
+        <div className="glass-card p-4 shadow-sm hover:shadow-md transition-shadow">
+          <h3 className="font-medium mb-3 text-base text-clinicus-blue">Additional History</h3>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{additionalHistory}</p>
         </div>
       )}
       
       {pastMedicalHistory && (
-        <div className="glass-card p-3">
-          <h3 className="font-medium mb-2 text-sm">Past Medical History</h3>
-          <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
+        <div className="glass-card p-4 shadow-sm hover:shadow-md transition-shadow">
+          <h3 className="font-medium mb-3 text-base text-clinicus-blue">Past Medical History</h3>
+          <ul className="text-sm text-gray-700 list-disc pl-5 space-y-2 leading-relaxed">
             <li>Coronary Artery Disease w/o history of MI</li>
             <li>Status post percutaneous coronary intervention with stent 3 years ago</li>
             <li>Hypertension</li>
@@ -109,9 +122,9 @@ const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
       )}
       
       {medications && (
-        <div className="glass-card p-3">
-          <h3 className="font-medium mb-2 text-sm">Medications</h3>
-          <ul className="text-xs text-gray-700 list-disc pl-5 space-y-1">
+        <div className="glass-card p-4 shadow-sm hover:shadow-md transition-shadow">
+          <h3 className="font-medium mb-3 text-base text-clinicus-blue">Medications</h3>
+          <ul className="text-sm text-gray-700 list-disc pl-5 space-y-2 leading-relaxed">
             <li>Metoprolol</li>
             <li>Atorvastatin</li>
             <li>Aspirin</li>
@@ -120,9 +133,9 @@ const MedicalHistorySection: React.FC<MedicalHistorySectionProps> = ({
       )}
       
       {socialHistory && (
-        <div className="glass-card p-3">
-          <h3 className="font-medium mb-2 text-sm">Social History</h3>
-          <p className="text-xs text-gray-700 whitespace-pre-wrap">{socialHistory}</p>
+        <div className="glass-card p-4 shadow-sm hover:shadow-md transition-shadow">
+          <h3 className="font-medium mb-3 text-base text-clinicus-blue">Social History</h3>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{socialHistory}</p>
         </div>
       )}
     </div>
