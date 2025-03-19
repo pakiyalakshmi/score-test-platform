@@ -9,6 +9,9 @@ import { useExamData } from '../hooks/useExamData';
 import { useTimer } from '../hooks/useTimer';
 import { saveAnswers, getAllAnswers, checkAllQuestionsAnswered, submitExamAnswers, clearExamAnswers } from '../utils/examAnswers';
 
+// Import Shadcn UI components
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+
 const ExamPage = () => {
   const { page } = useParams<{ page: string }>();
   const pageNumber = parseInt(page || '1');
@@ -140,7 +143,7 @@ const ExamPage = () => {
       ) : (
         <div className="flex flex-col space-y-4">
           {/* Patient Info Section - at the top */}
-          <div className="w-full bg-white p-3 md:p-4 rounded-lg shadow-sm">
+          <div className="w-full bg-white p-3 md:p-4 rounded-lg shadow-sm mb-4">
             <PatientInfoCard
               patientInfo={{
                 name: pageNumber === 1 ? "Lauren King" : "Mark Power",
@@ -153,66 +156,74 @@ const ExamPage = () => {
             />
           </div>
           
-          {/* Main content - side by side layout */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            {/* Left column for medical history - takes 1/3 on desktop */}
-            <div className="md:col-span-4 lg:col-span-3 space-y-2">
-              <h2 className="text-xl font-semibold text-clinicus-blue mb-2">Patient Information</h2>
+          {/* Main content - resizable layout */}
+          <ResizablePanelGroup
+            direction="horizontal"
+            className="min-h-[600px] w-full rounded-lg border"
+          >
+            {/* Left panel for medical history - default 30% width */}
+            <ResizablePanel defaultSize={30} minSize={20} className="bg-white p-4 shadow-sm">
+              <h2 className="text-xl font-semibold text-clinicus-blue mb-3">Patient Information</h2>
               <MedicalHistorySection
                 additionalHistory={additionalHistory}
                 pastMedicalHistory={pastMedicalHistory}
                 medications={medications}
                 socialHistory={socialHistory}
               />
-            </div>
+            </ResizablePanel>
             
-            {/* Right column for questions - takes 2/3 on desktop */}
-            <div className="md:col-span-8 lg:col-span-9">
-              <h2 className="text-xl font-semibold text-clinicus-blue mb-2">Cystic Fibrosis Sample Exam</h2>
-              
-              {/* Questions column layout */}
-              <div className="grid grid-cols-12 gap-4">
-                {/* Navigation Column */}
-                <div className="col-span-3 lg:col-span-2 bg-white rounded-lg border border-gray-200 p-2 md:p-3">
-                  <h3 className="font-medium text-gray-700 text-sm mb-2">Questions</h3>
-                  <div className="flex flex-col space-y-1.5">
-                    {displayQuestions.map((question, index) => (
-                      <button
-                        key={question.id}
-                        onClick={() => handleQuestionNavigation(index)}
-                        className={`px-2 py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors text-left ${
-                          index === currentQuestionIndex
-                            ? 'bg-clinicus-blue text-white'
-                            : answers[question.id]
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-                        Q {index + 1}
-                      </button>
-                    ))}
+            {/* Resizable handle */}
+            <ResizableHandle withHandle />
+            
+            {/* Right panel for questions - default 70% width */}
+            <ResizablePanel defaultSize={70} minSize={40} className="bg-white">
+              <div className="p-4">
+                <h2 className="text-xl font-semibold text-clinicus-blue mb-3">{examTitle}</h2>
+                
+                {/* Questions layout with more compact sidebar */}
+                <div className="grid grid-cols-12 gap-3">
+                  {/* Navigation Column - made more compact */}
+                  <div className="col-span-2 lg:col-span-1 bg-gray-50 rounded-lg border border-gray-200 p-1.5 md:p-2">
+                    <h3 className="font-medium text-gray-700 text-xs mb-2 text-center">Questions</h3>
+                    <div className="flex flex-col space-y-1">
+                      {displayQuestions.map((question, index) => (
+                        <button
+                          key={question.id}
+                          onClick={() => handleQuestionNavigation(index)}
+                          className={`px-1.5 py-1 rounded-md text-xs font-medium transition-colors text-center ${
+                            index === currentQuestionIndex
+                              ? 'bg-clinicus-blue text-white'
+                              : answers[question.id]
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          Q {index + 1}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Question Content Column - takes more space now */}
+                  <div className="col-span-10 lg:col-span-11">
+                    <QuestionForm
+                      examTitle={examTitle}
+                      timeRemaining={displayTime}
+                      caseNumber={pageNumber}
+                      caseName={pageNumber === 1 ? "Lauren King" : "MP"}
+                      questions={displayQuestions}
+                      onNext={handleNext}
+                      onSubmit={handleSubmit}
+                      onAnswerChange={handleAnswerChange}
+                      currentAnswers={answers}
+                      currentQuestionIndex={currentQuestionIndex}
+                      onQuestionNavigation={handleQuestionNavigation}
+                    />
                   </div>
                 </div>
-                
-                {/* Question Content Column */}
-                <div className="col-span-9 lg:col-span-10">
-                  <QuestionForm
-                    examTitle={examTitle}
-                    timeRemaining={displayTime}
-                    caseNumber={pageNumber}
-                    caseName={pageNumber === 1 ? "Lauren King" : "MP"}
-                    questions={displayQuestions}
-                    onNext={handleNext}
-                    onSubmit={handleSubmit}
-                    onAnswerChange={handleAnswerChange}
-                    currentAnswers={answers}
-                    currentQuestionIndex={currentQuestionIndex}
-                    onQuestionNavigation={handleQuestionNavigation}
-                  />
-                </div>
               </div>
-            </div>
-          </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
       )}
     </div>
