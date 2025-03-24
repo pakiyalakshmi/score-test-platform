@@ -1,12 +1,28 @@
-
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
 
-export const saveAnswers = (answers: Record<string, any>) => {
-  const storedAnswers = JSON.parse(localStorage.getItem('examAnswers') || '{}');
-  const updatedAnswers = { ...storedAnswers, ...answers };
-  localStorage.setItem('examAnswers', JSON.stringify(updatedAnswers));
-  return updatedAnswers;
+export const saveAnswers = async (answers: Record<string, any>) => {
+  try {
+    const storedAnswers = JSON.parse(localStorage.getItem('examAnswers') || '{}');
+    const updatedAnswers = { ...storedAnswers, ...answers };
+    localStorage.setItem('examAnswers', JSON.stringify(updatedAnswers));
+    
+    // Auto-save to backend if user is logged in
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      // We're not awaiting this to keep it non-blocking
+      supabase.functions.invoke('save-exam-progress', {
+        body: { answers: updatedAnswers, student_id: session.user.id }
+      }).catch(error => {
+        console.error('Error auto-saving exam progress:', error);
+      });
+    }
+    
+    return updatedAnswers;
+  } catch (error) {
+    console.error('Error saving answers:', error);
+    return {};
+  }
 };
 
 export const getAllAnswers = (): Record<string, any> => {
@@ -30,6 +46,13 @@ export const checkAllQuestionsAnswered = (
 
 export const submitExamAnswers = async (answers: Record<string, any>): Promise<boolean> => {
   try {
+    // Get current user session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      toast.error("You must be logged in to submit exam answers");
+      return false;
+    }
+    
     // Transform answers to the format expected by the database
     const formattedAnswers = Object.entries(answers).map(([questionId, answer]) => ({
       question_id: parseInt(questionId),
@@ -40,31 +63,38 @@ export const submitExamAnswers = async (answers: Record<string, any>): Promise<b
     const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     localStorage.setItem('examCompletionTime', currentTime);
     
-    // Note: student_answers table must exist in your Supabase database
-    // This is a placeholder - in a real app you'd use the actual schema
-    // Since this is just for demo, we'll continue without actually inserting
-    console.log('Would submit these answers to database:', formattedAnswers);
+    console.log('Submitting answers to database:', formattedAnswers);
     
-    /* 
-    // Uncomment this when student_answers table is available in the schema
-    const { error } = await supabase
-      .from('student_answers')
-      .insert(formattedAnswers);
-      
-    if (error) {
-      throw error;
-    }
-    */
-    
-    // After submission, we now call the calculate-exam-results function
-    // But we don't need to wait for the results here, as we'll fetch them on the results page
-    const { error } = await supabase.functions.invoke('calculate-exam-results', {
-      body: { answers }
+    // Call the calculate-exam-results function
+    const { data, error } = await supabase.functions.invoke('calculate-exam-results', {
+      body: { 
+        answers,
+        student_id: session.user.id,
+        test_id: 1 // Using test_id 1 for the CF case
+      }
     });
     
     if (error) {
-      console.error("Error calling calculate-exam-results:", error);
-      // We'll continue even if there's an error, as the results page will try again
+      console.error("Error calculating exam results:", error);
+      toast.error("Error submitting exam results");
+      return false;
+    }
+    
+    // Store result in student_results table
+    if (data) {
+      const { error: resultError } = await supabase
+        .from('student_results')
+        .insert({
+          student_id: session.user.id,
+          test_id: 1,
+          score: data.totalScore,
+          percentage_score: data.percentageScore,
+          feedback: data.feedback
+        });
+        
+      if (resultError) {
+        console.error("Error storing exam results:", resultError);
+      }
     }
     
     // Clear answers after successful submission
@@ -73,6 +103,7 @@ export const submitExamAnswers = async (answers: Record<string, any>): Promise<b
     return true;
   } catch (err) {
     console.error('Error submitting answers:', err);
+    toast.error("Failed to submit exam answers");
     return false;
   }
 };
@@ -89,4 +120,3 @@ export const initializeNewExam = () => {
   localStorage.removeItem('examCompletionTime'); // Clear completion time when starting a new exam
   console.log('Exam answers cleared - starting fresh exam');
 };
-

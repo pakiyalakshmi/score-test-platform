@@ -45,6 +45,66 @@ export type Database = {
         }
         Relationships: []
       }
+      student_logins: {
+        Row: {
+          id: string
+          ip_address: string | null
+          login_time: string
+          logout_time: string | null
+          student_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          login_time?: string
+          logout_time?: string | null
+          student_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          login_time?: string
+          logout_time?: string | null
+          student_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      student_results: {
+        Row: {
+          created_at: string
+          feedback: Json | null
+          id: string
+          percentage_score: number
+          score: number
+          student_id: string
+          test_id: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          feedback?: Json | null
+          id?: string
+          percentage_score: number
+          score: number
+          student_id: string
+          test_id: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          feedback?: Json | null
+          id?: string
+          percentage_score?: number
+          score?: number
+          student_id?: string
+          test_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tests: {
         Row: {
           case_info: Json

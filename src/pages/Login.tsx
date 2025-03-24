@@ -1,30 +1,129 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // If already logged in, redirect to student page
+        navigate("/student");
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
+  
+  // Set up auth state listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          // Record login
+          trackLogin(session.user.id);
+          
+          // Redirect to student page
+          navigate("/student");
+          toast.success("Login successful");
+        }
+      }
+    );
+    
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+  
+  const trackLogin = async (studentId: string) => {
+    try {
+      // Get IP address and user agent
+      const ipAddress = "Unknown"; // In a real app, you'd get this from a service
+      const userAgent = navigator.userAgent;
+      
+      // Call edge function to track login
+      await supabase.functions.invoke('track-student-login', {
+        body: { 
+          student_id: studentId,
+          action: 'login',
+          ip_address: ipAddress,
+          user_agent: userAgent
+        }
+      });
+    } catch (error) {
+      console.error("Error tracking login:", error);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username || !password) {
-      toast.error("Please enter both username and password");
+    if (!email || !password) {
+      toast.error("Please enter both email and password");
       return;
     }
     
-    if (username.includes("faculty")) {
-      navigate("/faculty");
-    } else {
-      navigate("/student");
+    try {
+      setLoading(true);
+      
+      // Sign in with Supabase Auth
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Auth state listener will handle redirect
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast.error(error.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async () => {
+    if (!email || !password) {
+      toast.error("Please enter both email and password");
+      return;
     }
     
-    toast.success("Login successful");
+    try {
+      setLoading(true);
+      
+      // Sign up with Supabase Auth
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            role: 'student'
+          }
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Signup successful! Please check your email for confirmation.");
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      toast.error(error.message || "Signup failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,15 +137,16 @@ const Login = () => {
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label htmlFor="username" className="text-sm text-gray-600">Username</label>
+              <label htmlFor="email" className="text-sm text-gray-600">Email</label>
               <div className="relative">
                 <input
-                  id="username"
-                  type="text"
+                  id="email"
+                  type="email"
                   className="input-field"
-                  placeholder="arvind_rajan@med.unc.edu"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="your.email@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -61,6 +161,7 @@ const Login = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
                 />
                 <button
                   type="button"
@@ -72,9 +173,27 @@ const Login = () => {
               </div>
             </div>
 
-            <button type="submit" className="clinicus-button w-full">
-              Sign in with SSO
+            <button 
+              type="submit" 
+              className="clinicus-button w-full"
+              disabled={loading}
+            >
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
+            
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{" "}
+                <button
+                  type="button"
+                  className="text-clinicus-blue hover:underline"
+                  onClick={handleSignUp}
+                  disabled={loading}
+                >
+                  Sign up
+                </button>
+              </p>
+            </div>
           </form>
         </div>
       </div>

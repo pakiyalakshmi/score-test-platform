@@ -87,9 +87,9 @@ serve(async (req) => {
   }
 
   try {
-    // Get the student's answers from the request
-    const { answers } = await req.json();
-    console.log("Processing answers:", answers);
+    // Get the request data
+    const { answers, student_id, test_id = 1 } = await req.json();
+    console.log(`Processing answers for student ${student_id}:`, answers);
     
     if (!answers || Object.keys(answers).length === 0) {
       return new Response(
@@ -114,8 +114,24 @@ serve(async (req) => {
     // Calculate the score
     const results = calculateScore(answers, questions);
     
-    // Store the results in the database (if you had a student_results table)
-    // For now, we'll just return the results
+    // Store the results in the database if student_id is provided
+    if (student_id) {
+      const { error: resultError } = await supabase
+        .from('student_results')
+        .upsert({
+          student_id,
+          test_id,
+          score: results.totalScore,
+          percentage_score: results.percentageScore,
+          feedback: results.feedback
+        }, { onConflict: 'student_id, test_id' });
+        
+      if (resultError) {
+        console.error("Error storing exam results:", resultError);
+      } else {
+        console.log("Successfully stored exam results for student:", student_id);
+      }
+    }
     
     return new Response(
       JSON.stringify(results),
