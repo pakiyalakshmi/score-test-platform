@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import QuestionForm from '../components/QuestionForm';
 import PatientInfoCard from '../components/exam/PatientInfoCard';
@@ -57,7 +58,7 @@ const ExamPage = () => {
     }
   }, [pageNumber]);
   
-  const patientImageUrl = "public/lovable-uploads/885815da-14b8-4b48-a843-41e92d404453.png";
+  const patientImageUrl = "/lovable-uploads/885815da-14b8-4b48-a843-41e92d404453.png";
   
   const handleNext = () => {
     if (!checkAllQuestionsAnswered(displayQuestions, answers)) {
@@ -67,12 +68,12 @@ const ExamPage = () => {
     saveAnswers(answers);
     
     if (pageNumber === 1) {
-      navigate('/exam/2');
+      navigate('/exam/2', { replace: true });
       toast.success("Page 1 completed");
     } else {
       const allAnswers = getAllAnswers();
       submitExamAnswers(allAnswers);
-      navigate('/student/results');
+      navigate('/student/results', { replace: true });
       toast.success("Exam submitted successfully");
     }
   };
@@ -85,7 +86,7 @@ const ExamPage = () => {
     saveAnswers(answers);
     
     submitExamAnswers(getAllAnswers());
-    navigate('/student/results');
+    navigate('/student/results', { replace: true });
     toast.success("Exam submitted successfully");
   };
   
