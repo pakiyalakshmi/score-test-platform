@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -8,9 +7,9 @@ import MedicalHistorySection from '../components/exam/MedicalHistorySection';
 import { useExamData } from '../hooks/useExamData';
 import { useTimer } from '../hooks/useTimer';
 import { saveAnswers, getAllAnswers, checkAllQuestionsAnswered, submitExamAnswers, clearExamAnswers } from '../utils/examAnswers';
-
-// Import Shadcn UI components
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const ExamPage = () => {
   const { page } = useParams<{ page: string }>();
@@ -19,35 +18,28 @@ const ExamPage = () => {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   
-  // Initialize the exam timer - 60 minutes by default
   const { displayTime, isExpired } = useTimer(60, 0);
   
-  // Clear previous answers on initial page load
   useEffect(() => {
-    // Only clear answers when first coming to the exam (page 1)
     if (pageNumber === 1) {
       clearExamAnswers();
       console.log('Starting new exam, cleared previous answers');
     }
     
-    // Load any answers that may exist (will be empty for a new exam)
     const savedAnswers = getAllAnswers();
     setAnswers(savedAnswers);
   }, []);
   
-  // Reset question index when page changes
   useEffect(() => {
     setCurrentQuestionIndex(0);
   }, [pageNumber]);
   
-  // Auto-submit if timer expires
   useEffect(() => {
     if (isExpired) {
       toast.error("Time's up! Your exam is being submitted.", {
         duration: 5000,
       });
       
-      // Auto-submit after a short delay to allow the user to see the message
       const timer = setTimeout(() => {
         handleSubmit();
       }, 3000);
@@ -56,10 +48,8 @@ const ExamPage = () => {
     }
   }, [isExpired]);
   
-  // Use our custom hook to fetch exam data
   const { loading, examTitle, caseInfo, displayQuestions } = useExamData(pageNumber);
   
-  // Load previous answers from localStorage when page changes
   useEffect(() => {
     if (pageNumber > 1) {
       const savedAnswers = getAllAnswers();
@@ -67,23 +57,19 @@ const ExamPage = () => {
     }
   }, [pageNumber]);
   
-  // Example patient image - in a real app this would come from your data
   const patientImageUrl = "public/lovable-uploads/885815da-14b8-4b48-a843-41e92d404453.png";
   
   const handleNext = () => {
-    // Check if all questions have been answered
     if (!checkAllQuestionsAnswered(displayQuestions, answers)) {
       return;
     }
     
-    // Save answers to localStorage
     saveAnswers(answers);
     
     if (pageNumber === 1) {
       navigate('/exam/2');
       toast.success("Page 1 completed");
     } else {
-      // Process and submit all answers
       const allAnswers = getAllAnswers();
       submitExamAnswers(allAnswers);
       navigate('/student/results');
@@ -92,15 +78,12 @@ const ExamPage = () => {
   };
   
   const handleSubmit = () => {
-    // Check if all questions have been answered
     if (!checkAllQuestionsAnswered(displayQuestions, answers)) {
       return;
     }
     
-    // Save answers and navigate
     saveAnswers(answers);
     
-    // Submit all answers
     submitExamAnswers(getAllAnswers());
     navigate('/student/results');
     toast.success("Exam submitted successfully");
@@ -117,10 +100,8 @@ const ExamPage = () => {
     setCurrentQuestionIndex(index);
   };
   
-  // Use case info from the database if available
   const patientWords = caseInfo || "I don't have the energy I used to. I'm still going on my walk around the neighborhood every morning, but it's taking me longer than usual. Sometimes I get short of breath and have to slow down. Other times it feels like my heart is racing or pounding in my chest, even when I'm not walking around.";
   
-  // Additional clinical data for page 2
   const additionalHistory = pageNumber === 2 ? 
     "You ask Mr. Power some additional questions about his symptoms. He denies any chest pain, chest pressure, orthopnea, paroxysmal nocturnal dyspnea, cough, sputum production, wheezing, hemoptysis, fever, chills, dizziness, lightheadedness, syncope, excessive daytime somnolence, tremor, skin or hair changes, heat or cold intolerance, or unintentional weight loss. He does endorse some mild bilateral lower extremity edema over the past few weeks." : undefined;
   
@@ -142,86 +123,100 @@ const ExamPage = () => {
         </div>
       ) : (
         <div className="flex flex-col space-y-4">
-          {/* Patient Info Section - at the top */}
-          <div className="w-full bg-white p-3 md:p-4 rounded-lg shadow-sm mb-4">
-            <PatientInfoCard
-              patientInfo={{
-                name: pageNumber === 1 ? "Lauren King" : "Mark Power",
-                pronouns: pageNumber === 1 ? "she/her" : "he/him",
-                age: pageNumber === 1 ? 2 : 75,
-                imageUrl: patientImageUrl
-              }}
-              caseNumber={pageNumber}
-              patientWords={patientWords}
-            />
-          </div>
-          
-          {/* Main content - resizable layout with flipped panels */}
           <ResizablePanelGroup
             direction="horizontal"
             className="min-h-[600px] w-full rounded-lg border"
           >
-            {/* Left panel for questions - default 60% width */}
-            <ResizablePanel defaultSize={60} minSize={40} className="bg-white">
-              <div className="p-4">
-                <h2 className="text-xl font-semibold text-clinicus-blue mb-3">{examTitle}</h2>
-                
-                {/* Questions layout with more compact sidebar */}
-                <div className="grid grid-cols-12 gap-3">
-                  {/* Navigation Column - made more compact */}
-                  <div className="col-span-2 lg:col-span-1 bg-gray-50 rounded-lg border border-gray-200 p-1.5 md:p-2">
-                    <h3 className="font-medium text-gray-700 text-xs mb-2 text-center">Questions</h3>
-                    <div className="flex flex-col space-y-1">
-                      {displayQuestions.map((question, index) => (
-                        <button
-                          key={question.id}
-                          onClick={() => handleQuestionNavigation(index)}
-                          className={`px-1.5 py-1 rounded-md text-xs font-medium transition-colors text-center ${
-                            index === currentQuestionIndex
-                              ? 'bg-clinicus-blue text-white'
-                              : answers[question.id]
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          Q {index + 1}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Question Content Column - takes more space now */}
-                  <div className="col-span-10 lg:col-span-11">
-                    <QuestionForm
-                      examTitle={examTitle}
-                      timeRemaining={displayTime}
-                      caseNumber={pageNumber}
-                      caseName={pageNumber === 1 ? "Lauren King" : "MP"}
-                      questions={displayQuestions}
-                      onNext={handleNext}
-                      onSubmit={handleSubmit}
-                      onAnswerChange={handleAnswerChange}
-                      currentAnswers={answers}
-                      currentQuestionIndex={currentQuestionIndex}
-                      onQuestionNavigation={handleQuestionNavigation}
-                    />
-                  </div>
+            <ResizablePanel defaultSize={8} minSize={5} maxSize={12} className="bg-gray-100">
+              <div className="p-2 h-full">
+                <div className="flex flex-col space-y-2">
+                  {displayQuestions.map((question, index) => (
+                    <button
+                      key={question.id}
+                      onClick={() => handleQuestionNavigation(index)}
+                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        index === currentQuestionIndex
+                          ? 'bg-clinicus-blue text-white'
+                          : answers[question.id]
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-white text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      Q {index + 1}
+                    </button>
+                  ))}
                 </div>
               </div>
             </ResizablePanel>
             
-            {/* Resizable handle */}
             <ResizableHandle withHandle />
             
-            {/* Right panel for medical history - default 40% width */}
-            <ResizablePanel defaultSize={40} minSize={30} className="bg-white p-4 shadow-sm">
-              <h2 className="text-xl font-semibold text-clinicus-blue mb-3">Patient Information</h2>
-              <MedicalHistorySection
-                additionalHistory={additionalHistory}
-                pastMedicalHistory={pastMedicalHistory}
-                medications={medications}
-                socialHistory={socialHistory}
-              />
+            <ResizablePanel defaultSize={32} minSize={20} className="bg-white">
+              <ScrollArea className="h-full w-full p-4">
+                <div className="mb-4">
+                  <PatientInfoCard
+                    patientInfo={{
+                      name: pageNumber === 1 ? "Lauren King" : "Mark Power",
+                      pronouns: pageNumber === 1 ? "she/her" : "he/him",
+                      age: pageNumber === 1 ? 2 : 75,
+                      imageUrl: patientImageUrl
+                    }}
+                    caseNumber={pageNumber}
+                    patientWords={patientWords}
+                  />
+                </div>
+                
+                <MedicalHistorySection
+                  additionalHistory={additionalHistory}
+                  pastMedicalHistory={pastMedicalHistory}
+                  medications={medications}
+                  socialHistory={socialHistory}
+                />
+              </ScrollArea>
+            </ResizablePanel>
+            
+            <ResizableHandle withHandle />
+            
+            <ResizablePanel defaultSize={60} minSize={40} className="bg-white p-4">
+              <div className="h-full flex flex-col">
+                <h2 className="text-xl font-semibold text-clinicus-blue mb-3">{examTitle}</h2>
+                
+                <div className="flex-1">
+                  <QuestionForm
+                    examTitle={examTitle}
+                    timeRemaining={displayTime}
+                    caseNumber={pageNumber}
+                    caseName={pageNumber === 1 ? "Lauren King" : "MP"}
+                    questions={displayQuestions}
+                    onNext={handleNext}
+                    onSubmit={handleSubmit}
+                    onAnswerChange={handleAnswerChange}
+                    currentAnswers={answers}
+                    currentQuestionIndex={currentQuestionIndex}
+                    onQuestionNavigation={handleQuestionNavigation}
+                  />
+                </div>
+                
+                <div className="flex justify-between mt-4">
+                  <button 
+                    onClick={handleQuestionNavigation.bind(null, Math.max(0, currentQuestionIndex - 1))}
+                    disabled={currentQuestionIndex === 0}
+                    className="px-4 py-2 flex items-center gap-2 text-gray-600 disabled:opacity-50"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Previous</span>
+                  </button>
+                  
+                  <button 
+                    onClick={handleQuestionNavigation.bind(null, Math.min(displayQuestions.length - 1, currentQuestionIndex + 1))}
+                    disabled={currentQuestionIndex === displayQuestions.length - 1}
+                    className="px-4 py-2 flex items-center gap-2 text-gray-600 disabled:opacity-50"
+                  >
+                    <span>Next</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              </div>
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>
