@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -46,6 +47,9 @@ export const checkAllQuestionsAnswered = (
 
 export const submitExamAnswers = async (answers: Record<string, any>): Promise<boolean> => {
   try {
+    // Show toast to indicate submission is in progress
+    toast.info("Submitting exam answers...");
+    
     // Get current user session
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
@@ -84,16 +88,19 @@ export const submitExamAnswers = async (answers: Record<string, any>): Promise<b
     if (data) {
       const { error: resultError } = await supabase
         .from('student_results')
-        .insert({
+        .upsert({
           student_id: session.user.id,
           test_id: 1,
           score: data.totalScore,
           percentage_score: data.percentageScore,
           feedback: data.feedback
-        });
+        }, { onConflict: 'student_id, test_id' });
         
       if (resultError) {
         console.error("Error storing exam results:", resultError);
+        toast.error("Error saving results to database");
+      } else {
+        toast.success("Exam submitted successfully");
       }
     }
     
@@ -119,4 +126,26 @@ export const initializeNewExam = () => {
   clearExamAnswers();
   localStorage.removeItem('examCompletionTime'); // Clear completion time when starting a new exam
   console.log('Exam answers cleared - starting fresh exam');
+};
+
+// New function to check if user has active results
+export const hasStoredResults = async (userId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('student_results')
+      .select('id')
+      .eq('student_id', userId)
+      .eq('test_id', 1)
+      .maybeSingle();
+      
+    if (error) {
+      console.error('Error checking for stored results:', error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error('Error checking for stored results:', error);
+    return false;
+  }
 };

@@ -4,22 +4,83 @@ import { toast } from "sonner";
 import Layout from "../components/Layout";
 import CircleProgress from "../components/CircleProgress";
 import ExamInsight from "../components/ExamInsight";
-import { Clock, FileText, Calendar, CheckCircle2, AlertTriangle } from "lucide-react";
-import { getAllAnswers } from "../utils/examAnswers";
+import { Clock, FileText, Calendar, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
+import { getAllAnswers, initializeNewExam } from "../utils/examAnswers";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const StudentResults = () => {
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState<any>(null);
   const [feedbackExpanded, setFeedbackExpanded] = useState<Record<string, boolean>>({});
   const [completionTime, setCompletionTime] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
+    // Check if user is logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        // Redirect to login if not logged in
+        toast.error("Please log in to view your results");
+        navigate("/login");
+      }
+    });
+
     const fetchResults = async () => {
       try {
         setLoading(true);
         
-        // Get all the answers from localStorage
+        // Get user session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          setLoading(false);
+          return;
+        }
+        
+        // First try to get results from the database
+        const { data: storedResults, error } = await supabase
+          .from('student_results')
+          .select('*')
+          .eq('student_id', session.user.id)
+          .eq('test_id', 1)
+          .maybeSingle();
+          
+        if (error) {
+          console.error("Error fetching stored results:", error);
+        }
+        
+        if (storedResults && storedResults.feedback) {
+          console.log("Found stored results:", storedResults);
+          setResults({
+            totalScore: storedResults.score,
+            percentageScore: storedResults.percentage_score,
+            maxPossibleScore: storedResults.score * 100 / storedResults.percentage_score,
+            feedback: storedResults.feedback,
+            overallFeedback: "Based on your responses, here are areas to focus on for improvement."
+          });
+          
+          // Get completion time from localStorage if available
+          const storedTime = localStorage.getItem('examCompletionTime');
+          if (storedTime) {
+            setCompletionTime(storedTime);
+          } else {
+            // If no stored time, use the timestamp from the database
+            setCompletionTime(new Date(storedResults.created_at).toLocaleTimeString([], { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            }));
+          }
+          
+          setLoading(false);
+          return;
+        }
+        
+        // If no stored results, calculate from answers
         const allAnswers = getAllAnswers();
         
         if (Object.keys(allAnswers).length === 0) {
@@ -38,18 +99,40 @@ const StudentResults = () => {
         }
         
         // Call the edge function to calculate results
-        const { data, error } = await supabase.functions.invoke('calculate-exam-results', {
-          body: { answers: allAnswers }
+        const { data, error: calcError } = await supabase.functions.invoke('calculate-exam-results', {
+          body: { 
+            answers: allAnswers,
+            student_id: session.user.id,
+            test_id: 1
+          }
         });
         
-        if (error) {
-          console.error("Error calculating results:", error);
+        if (calcError) {
+          console.error("Error calculating results:", calcError);
           toast.error("Failed to calculate exam results");
           setLoading(false);
           return;
         }
         
         console.log("Calculated results:", data);
+        
+        // Store the results in the database
+        if (data) {
+          const { error: saveError } = await supabase
+            .from('student_results')
+            .upsert({
+              student_id: session.user.id,
+              test_id: 1,
+              score: data.totalScore,
+              percentage_score: data.percentageScore,
+              feedback: data.feedback
+            }, { onConflict: 'student_id, test_id' });
+            
+          if (saveError) {
+            console.error("Error saving results:", saveError);
+          }
+        }
+        
         setResults(data);
       } catch (err) {
         console.error("Error fetching results:", err);
@@ -60,13 +143,41 @@ const StudentResults = () => {
     };
     
     fetchResults();
-  }, []);
+  }, [navigate]);
 
   const toggleFeedback = (id: string) => {
     setFeedbackExpanded(prev => ({
       ...prev,
       [id]: !prev[id]
     }));
+  };
+
+  const handleTryAgain = async () => {
+    try {
+      setIsSubmitting(true);
+      
+      // Clear existing exam data
+      initializeNewExam();
+      
+      // Delete existing results if any
+      if (userId) {
+        await supabase
+          .from('student_results')
+          .delete()
+          .eq('student_id', userId)
+          .eq('test_id', 1);
+      }
+      
+      toast.success("Ready for a new attempt");
+      
+      // Navigate back to exam
+      navigate("/exam/1");
+    } catch (error) {
+      console.error("Error resetting exam:", error);
+      toast.error("Failed to reset exam");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -76,9 +187,24 @@ const StudentResults = () => {
       email="arvind_rajan@med.unc.edu"
     >
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Results</h1>
-          <p className="text-gray-500">Circulation Block CBL Final</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Results</h1>
+            <p className="text-gray-500">Circulation Block CBL Final</p>
+          </div>
+          
+          <Button 
+            onClick={handleTryAgain}
+            disabled={isSubmitting}
+            className="flex items-center gap-2 gold-button"
+          >
+            {isSubmitting ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Try Again
+          </Button>
         </div>
         
         {loading ? (
