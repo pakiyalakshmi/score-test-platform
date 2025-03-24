@@ -22,17 +22,7 @@ const PatientInfoCard: React.FC<PatientInfoCardProps> = ({
       <div className="p-4">
         <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">Case {caseNumber}: {patientInfo.name}</h2>
         
-        <div className="flex flex-col md:flex-row gap-4">
-          {patientInfo.imageUrl && (
-            <div className="flex-shrink-0 rounded-lg overflow-hidden max-w-[160px]">
-              <img 
-                src={patientInfo.imageUrl} 
-                alt={patientInfo.name} 
-                className="w-full h-auto object-cover"
-              />
-            </div>
-          )}
-          
+        <div className="flex flex-col gap-4">
           <div className="flex-grow">
             <div className="mb-4">
               <p className="text-white font-semibold text-xl md:text-2xl">{patientInfo.name}</p>
