@@ -11,37 +11,22 @@ export type Database = {
     Tables: {
       exam_questions: {
         Row: {
-          answer_format: Json
-          chunk_id: number
-          clin_reasoning: string | null
-          med_content: Json | null
-          question_id: number
-          question_text: string
-          rubric: string | null
+          case_info: Json | null
+          test_description: string
           test_id: number
-          tot_points: number | null
+          test_name: string
         }
         Insert: {
-          answer_format: Json
-          chunk_id: number
-          clin_reasoning?: string | null
-          med_content?: Json | null
-          question_id: number
-          question_text: string
-          rubric?: string | null
+          case_info?: Json | null
+          test_description: string
           test_id: number
-          tot_points?: number | null
+          test_name: string
         }
         Update: {
-          answer_format?: Json
-          chunk_id?: number
-          clin_reasoning?: string | null
-          med_content?: Json | null
-          question_id?: number
-          question_text?: string
-          rubric?: string | null
+          case_info?: Json | null
+          test_description?: string
           test_id?: number
-          tot_points?: number | null
+          test_name?: string
         }
         Relationships: []
       }
