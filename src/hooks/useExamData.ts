@@ -60,11 +60,11 @@ export const useExamData = (pageNumber: number) => {
   // Transform database questions into the format expected by QuestionForm
   const formatQuestionsForDisplay = (questions: any[]): ExamQuestion[] => {
     return questions.map(q => ({
-      id: q.question_id || q.id,
-      title: q.question_text || q.title,
-      description: q.clin_reasoning || q.description || undefined,
-      responseType: (q.answer_format && q.answer_format.type) || q.responseType || 'text',
-      tableHeaders: (q.answer_format && q.answer_format.tableHeaders) || q.tableHeaders || undefined,
+      id: q.question_id,
+      title: q.question_text,
+      description: q.clin_reasoning || undefined,
+      responseType: q.answer_format?.type || 'text',
+      tableHeaders: q.answer_format?.tableHeaders || undefined,
     }));
   };
 
@@ -91,7 +91,6 @@ export const useExamData = (pageNumber: number) => {
           .single();
           
         if (testError) {
-          console.error('Error fetching test data:', testError);
           throw testError;
         }
         
@@ -110,26 +109,22 @@ export const useExamData = (pageNumber: number) => {
           }
         }
         
-        // Fetch questions from Supabase
-        // Modified to query without the chunk_id column that doesn't exist
+        // Fetch questions from Supabase where chunk_id matches the current page
         const { data: questionData, error: questionError } = await supabase
           .from('exam_questions')
           .select('*')
-          .order('test_id');
+          .eq('chunk_id', pageNumber)
+          .order('question_id');
           
         if (questionError) {
-          console.error('Error fetching exam questions:', questionError);
           throw questionError;
         }
         
-        if (questionData && questionData.length > 0) {
-          console.log(`Fetched exam questions:`, questionData);
-          
-          // Filter questions based on pageNumber if needed
-          // For now, we'll just use all questions since there's no chunk_id
+        if (questionData) {
+          console.log(`Fetched exam questions for page ${pageNumber}:`, questionData);
           setQuestions(questionData);
         } else {
-          console.log(`No questions found, using fallbacks`);
+          console.log(`No questions found for page ${pageNumber}, using fallbacks`);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
