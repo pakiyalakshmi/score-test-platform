@@ -12,7 +12,7 @@ interface ExamQuestion {
   tableHeaders?: string[][];
 }
 
-// Define a more specific type for the case chunks to avoid deep type inference issues
+// Define simple interfaces to avoid deep type inference issues
 interface CaseChunk {
   chunk_id: number;
   content: string;
@@ -123,18 +123,21 @@ export const useExamData = (pageNumber: number) => {
         if (testData) {
           setExamTitle(testData.test_name);
           
-          // Use explicit type assertion for case_info to avoid deep type inference
-          const caseInfo = testData.case_info as unknown as CaseChunk[];
+          // Cast case_info to 'any' first to avoid type inference issues
+          const caseInfoRaw = testData.case_info as any;
           
-          if (Array.isArray(caseInfo)) {
-            // Find the case information for the current chunk/page
-            const chunkData = caseInfo.find(chunk => chunk.chunk_id === pageNumber);
-            if (chunkData && 'content' in chunkData) {
-              setCaseInfo(String(chunkData.content));
+          if (Array.isArray(caseInfoRaw)) {
+            // Explicitly type as simple objects when accessing properties
+            const chunkData = caseInfoRaw.find((chunk: any) => 
+              typeof chunk === 'object' && chunk?.chunk_id === pageNumber
+            );
+            
+            if (chunkData && typeof chunkData.content === 'string') {
+              setCaseInfo(chunkData.content);
             }
             
-            // Determine total pages/chunks
-            setTotalPages(caseInfo.length);
+            // Set total pages based on array length
+            setTotalPages(caseInfoRaw.length);
           } else {
             console.error('Expected case_info to be an array, got:', typeof testData.case_info);
           }
