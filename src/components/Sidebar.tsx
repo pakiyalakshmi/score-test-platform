@@ -1,6 +1,8 @@
 
 import { Home, ClipboardCheck, PieChart, Settings, MessageSquare, LogOut } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface SidebarProps {
   userType: "student" | "faculty";
@@ -8,7 +10,22 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ userType }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // Redirect to login page after successful sign out
+      navigate("/login");
+      toast.success("Successfully signed out");
+    } catch (error: any) {
+      console.error("Error signing out:", error);
+      toast.error(error.message || "Error signing out");
+    }
+  };
 
   return (
     <div className="w-64 h-screen bg-clinicus-blue flex flex-col animate-slide-in">
@@ -47,10 +64,10 @@ const Sidebar: React.FC<SidebarProps> = ({ userType }) => {
           <span>Feedback</span>
         </Link>
         
-        <Link to="/login" className="sidebar-item">
+        <button onClick={handleSignOut} className="sidebar-item w-full text-left">
           <LogOut size={20} />
           <span>Sign Out</span>
-        </Link>
+        </button>
       </div>
     </div>
   );
