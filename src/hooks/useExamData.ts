@@ -12,6 +12,12 @@ interface ExamQuestion {
   tableHeaders?: string[][];
 }
 
+// Define a more specific type for the case chunks to avoid deep type inference issues
+interface CaseChunk {
+  chunk_id: number;
+  content: string;
+}
+
 // Fallback questions for page 1
 const page1Questions = [
   {
@@ -117,16 +123,18 @@ export const useExamData = (pageNumber: number) => {
         if (testData) {
           setExamTitle(testData.test_name);
           
-          // Fix: Type check the case_info before using find method
-          if (Array.isArray(testData.case_info)) {
+          // Use explicit type assertion for case_info to avoid deep type inference
+          const caseInfo = testData.case_info as unknown as CaseChunk[];
+          
+          if (Array.isArray(caseInfo)) {
             // Find the case information for the current chunk/page
-            const chunkData = testData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
-            if (chunkData && typeof chunkData === 'object' && 'content' in chunkData) {
+            const chunkData = caseInfo.find(chunk => chunk.chunk_id === pageNumber);
+            if (chunkData && 'content' in chunkData) {
               setCaseInfo(String(chunkData.content));
             }
             
             // Determine total pages/chunks
-            setTotalPages(testData.case_info.length);
+            setTotalPages(caseInfo.length);
           } else {
             console.error('Expected case_info to be an array, got:', typeof testData.case_info);
           }
