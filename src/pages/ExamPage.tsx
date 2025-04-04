@@ -10,7 +10,7 @@ import { useTimer } from '../hooks/useTimer';
 import { saveAnswers, getAllAnswers, checkAllQuestionsAnswered, submitExamAnswers, clearExamAnswers } from '../utils/examAnswers';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, ArrowRight, Lock } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const ExamPage = () => {
   const { page } = useParams<{ page: string }>();
@@ -21,32 +21,15 @@ const ExamPage = () => {
   
   const { displayTime, isExpired } = useTimer(60, 0);
   
-  const { 
-    loading, 
-    examTitle, 
-    caseInfo, 
-    displayQuestions,
-    totalPages,
-    availablePages,
-    unlockNextPage
-  } = useExamData(pageNumber);
-  
   useEffect(() => {
     if (pageNumber === 1) {
       clearExamAnswers();
       console.log('Starting new exam, cleared previous answers');
     }
     
-    // Check if the page is allowed
-    if (pageNumber > 1 && !availablePages.includes(pageNumber)) {
-      toast.error("You must complete the previous section first");
-      navigate(`/exam/1`, { replace: true });
-      return;
-    }
-    
     const savedAnswers = getAllAnswers();
     setAnswers(savedAnswers);
-  }, [pageNumber, availablePages]);
+  }, []);
   
   useEffect(() => {
     setCurrentQuestionIndex(0);
@@ -66,12 +49,16 @@ const ExamPage = () => {
     }
   }, [isExpired]);
   
+  const { loading, examTitle, caseInfo, displayQuestions } = useExamData(pageNumber);
+  
   useEffect(() => {
     if (pageNumber > 1) {
       const savedAnswers = getAllAnswers();
       setAnswers(savedAnswers);
     }
   }, [pageNumber]);
+  
+  const patientImageUrl = "/lovable-uploads/885815da-14b8-4b48-a843-41e92d404453.png";
   
   const handleNext = () => {
     if (!checkAllQuestionsAnswered(displayQuestions, answers)) {
@@ -80,10 +67,9 @@ const ExamPage = () => {
     
     saveAnswers(answers);
     
-    if (pageNumber < totalPages) {
-      unlockNextPage();
-      navigate(`/exam/${pageNumber + 1}`, { replace: true });
-      toast.success(`Page ${pageNumber} completed`);
+    if (pageNumber === 1) {
+      navigate('/exam/2', { replace: true });
+      toast.success("Page 1 completed");
     } else {
       const allAnswers = getAllAnswers();
       submitExamAnswers(allAnswers);
@@ -115,7 +101,7 @@ const ExamPage = () => {
     setCurrentQuestionIndex(index);
   };
   
-  const patientWords = caseInfo || "Loading case information...";
+  const patientWords = caseInfo || "I don't have the energy I used to. I'm still going on my walk around the neighborhood every morning, but it's taking me longer than usual. Sometimes I get short of breath and have to slow down. Other times it feels like my heart is racing or pounding in my chest, even when I'm not walking around.";
   
   const additionalHistory = pageNumber === 2 ? 
     "You ask Mr. Power some additional questions about his symptoms. He denies any chest pain, chest pressure, orthopnea, paroxysmal nocturnal dyspnea, cough, sputum production, wheezing, hemoptysis, fever, chills, dizziness, lightheadedness, syncope, excessive daytime somnolence, tremor, skin or hair changes, heat or cold intolerance, or unintentional weight loss. He does endorse some mild bilateral lower extremity edema over the past few weeks." : undefined;
@@ -128,35 +114,6 @@ const ExamPage = () => {
   
   const socialHistory = pageNumber === 2 ? 
     "Mr. Power is a retired engineer. He is married and has one adult child. Mr. Power smoked 1 pack of cigarettes per day from about age 20 to 35 and does not currently smoke. He denies alcohol or drug use. He exercises by walking 2 miles every day. He tries to eat a diet low in sodium and high in fruits and vegetables." : undefined;
-
-  // Function to render page navigation buttons
-  const renderPageNavigation = () => {
-    const pageButtons = [];
-
-    for (let i = 1; i <= totalPages; i++) {
-      const isAvailable = availablePages.includes(i);
-      const isCurrent = i === pageNumber;
-
-      pageButtons.push(
-        <button
-          key={i}
-          onClick={() => isAvailable && navigate(`/exam/${i}`)}
-          disabled={!isAvailable}
-          className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1
-            ${isCurrent ? 'bg-clinicus-blue text-white' : isAvailable ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
-        >
-          {!isAvailable && <Lock size={12} />}
-          <span>Page {i}</span>
-        </button>
-      );
-    }
-
-    return (
-      <div className="flex space-x-2 mb-4">
-        {pageButtons}
-      </div>
-    );
-  };
   
   return (
     <div className="min-h-screen bg-gray-50 p-2 md:p-4 lg:p-6">
@@ -167,8 +124,6 @@ const ExamPage = () => {
         </div>
       ) : (
         <div className="flex flex-col space-y-4">
-          {renderPageNavigation()}
-          
           <ResizablePanelGroup
             direction="horizontal"
             className="min-h-[600px] w-full rounded-lg border"
@@ -204,7 +159,8 @@ const ExamPage = () => {
                     patientInfo={{
                       name: pageNumber === 1 ? "Lauren King" : "Mark Power",
                       pronouns: pageNumber === 1 ? "she/her" : "he/him",
-                      age: pageNumber === 1 ? 2 : 75
+                      age: pageNumber === 1 ? 2 : 75,
+                      imageUrl: patientImageUrl
                     }}
                     caseNumber={pageNumber}
                     patientWords={patientWords}
@@ -224,7 +180,7 @@ const ExamPage = () => {
             
             <ResizablePanel defaultSize={60} minSize={40} className="bg-white p-4">
               <div className="h-full flex flex-col">
-                <h2 className="text-xl font-semibold text-clinicus-blue mb-3">{examTitle} - Page {pageNumber}</h2>
+                <h2 className="text-xl font-semibold text-clinicus-blue mb-3">{examTitle}</h2>
                 
                 <div className="flex-1">
                   <QuestionForm

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from '@/integrations/supabase/types';
 
 interface ExamQuestion {
   id: number;
@@ -10,12 +11,6 @@ interface ExamQuestion {
   responseType: 'text' | 'table' | 'multiChoice' | 'differential';
   responseOptions?: string[];
   tableHeaders?: string[][];
-}
-
-// Define simple interfaces to avoid deep type inference issues
-interface CaseChunk {
-  chunk_id: number;
-  content: string;
 }
 
 // Fallback questions for page 1
@@ -61,8 +56,6 @@ export const useExamData = (pageNumber: number) => {
   const [caseInfo, setCaseInfo] = useState<string>('');
   const [examTitle, setExamTitle] = useState<string>('Medical Exam');
   const [currentPage, setCurrentPage] = useState<number>(pageNumber);
-  const [totalPages, setTotalPages] = useState<number>(0);
-  const [availablePages, setAvailablePages] = useState<number[]>([1]);
 
   // Transform database questions into the format expected by QuestionForm
   const formatQuestionsForDisplay = (questions: any[]): ExamQuestion[] => {
@@ -85,25 +78,6 @@ export const useExamData = (pageNumber: number) => {
     }
   }, [pageNumber, currentPage]);
 
-  // Track available pages - which chunks the user is allowed to access
-  useEffect(() => {
-    // Get stored available pages from localStorage
-    const storedAvailablePages = localStorage.getItem('availableExamPages');
-    if (storedAvailablePages) {
-      const parsedPages = JSON.parse(storedAvailablePages);
-      setAvailablePages(parsedPages);
-    }
-  }, []);
-
-  // Update available pages when user progresses
-  const unlockNextPage = () => {
-    if (currentPage < totalPages && !availablePages.includes(currentPage + 1)) {
-      const updatedPages = [...availablePages, currentPage + 1];
-      setAvailablePages(updatedPages);
-      localStorage.setItem('availableExamPages', JSON.stringify(updatedPages));
-    }
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -123,27 +97,19 @@ export const useExamData = (pageNumber: number) => {
         if (testData) {
           setExamTitle(testData.test_name);
           
-          // Cast case_info to 'any' first to avoid type inference issues
-          const caseInfoRaw = testData.case_info as any;
-          
-          if (Array.isArray(caseInfoRaw)) {
-            // Explicitly type as simple objects when accessing properties
-            const chunkData = caseInfoRaw.find((chunk: any) => 
-              typeof chunk === 'object' && chunk?.chunk_id === pageNumber
-            );
-            
-            if (chunkData && typeof chunkData.content === 'string') {
-              setCaseInfo(chunkData.content);
+          // Fix: Type check the case_info before using find method
+          if (Array.isArray(testData.case_info)) {
+            // Find the case information for the current chunk/page
+            const chunkData = testData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
+            if (chunkData && typeof chunkData === 'object' && 'content' in chunkData) {
+              setCaseInfo(String(chunkData.content)); // Convert to string to fix type error
             }
-            
-            // Set total pages based on array length
-            setTotalPages(caseInfoRaw.length);
           } else {
             console.error('Expected case_info to be an array, got:', typeof testData.case_info);
           }
         }
         
-        // Fetch questions for the current page
+        // Fetch questions from Supabase where chunk_id matches the current page
         const { data: questionData, error: questionError } = await supabase
           .from('exam_questions')
           .select('*')
@@ -154,7 +120,7 @@ export const useExamData = (pageNumber: number) => {
           throw questionError;
         }
         
-        if (questionData && questionData.length > 0) {
+        if (questionData) {
           console.log(`Fetched exam questions for page ${pageNumber}:`, questionData);
           setQuestions(questionData);
         } else {
@@ -180,10 +146,6 @@ export const useExamData = (pageNumber: number) => {
     loading,
     examTitle,
     caseInfo,
-    displayQuestions,
-    totalPages,
-    currentPage: pageNumber,
-    availablePages,
-    unlockNextPage
+    displayQuestions
   };
 };
