@@ -56,6 +56,8 @@ export const useExamData = (pageNumber: number) => {
   const [caseInfo, setCaseInfo] = useState<string>('');
   const [examTitle, setExamTitle] = useState<string>('Medical Exam');
   const [currentPage, setCurrentPage] = useState<number>(pageNumber);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [availablePages, setAvailablePages] = useState<number[]>([1]);
 
   // Transform database questions into the format expected by QuestionForm
   const formatQuestionsForDisplay = (questions: any[]): ExamQuestion[] => {
@@ -77,6 +79,25 @@ export const useExamData = (pageNumber: number) => {
       setCurrentPage(pageNumber);
     }
   }, [pageNumber, currentPage]);
+
+  // Track available pages - which chunks the user is allowed to access
+  useEffect(() => {
+    // Get stored available pages from localStorage
+    const storedAvailablePages = localStorage.getItem('availableExamPages');
+    if (storedAvailablePages) {
+      const parsedPages = JSON.parse(storedAvailablePages);
+      setAvailablePages(parsedPages);
+    }
+  }, []);
+
+  // Update available pages when user progresses
+  const unlockNextPage = () => {
+    if (currentPage < totalPages && !availablePages.includes(currentPage + 1)) {
+      const updatedPages = [...availablePages, currentPage + 1];
+      setAvailablePages(updatedPages);
+      localStorage.setItem('availableExamPages', JSON.stringify(updatedPages));
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,12 +125,15 @@ export const useExamData = (pageNumber: number) => {
             if (chunkData && typeof chunkData === 'object' && 'content' in chunkData) {
               setCaseInfo(String(chunkData.content)); // Convert to string to fix type error
             }
+            
+            // Determine total pages/chunks
+            setTotalPages(testData.case_info.length);
           } else {
             console.error('Expected case_info to be an array, got:', typeof testData.case_info);
           }
         }
         
-        // Fetch questions from Supabase where chunk_id matches the current page
+        // Fetch questions for the current page
         const { data: questionData, error: questionError } = await supabase
           .from('exam_questions')
           .select('*')
@@ -120,7 +144,7 @@ export const useExamData = (pageNumber: number) => {
           throw questionError;
         }
         
-        if (questionData) {
+        if (questionData && questionData.length > 0) {
           console.log(`Fetched exam questions for page ${pageNumber}:`, questionData);
           setQuestions(questionData);
         } else {
@@ -146,6 +170,10 @@ export const useExamData = (pageNumber: number) => {
     loading,
     examTitle,
     caseInfo,
-    displayQuestions
+    displayQuestions,
+    totalPages,
+    currentPage: pageNumber,
+    availablePages,
+    unlockNextPage
   };
 };
