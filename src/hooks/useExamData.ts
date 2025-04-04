@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from '@/integrations/supabase/types';
 
 interface ExamQuestion {
   id: number;
@@ -123,7 +122,7 @@ export const useExamData = (pageNumber: number) => {
             // Find the case information for the current chunk/page
             const chunkData = testData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
             if (chunkData && typeof chunkData === 'object' && 'content' in chunkData) {
-              setCaseInfo(String(chunkData.content)); // Convert to string to fix type error
+              setCaseInfo(String(chunkData.content));
             }
             
             // Determine total pages/chunks
