@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from '@/integrations/supabase/types';
 
 interface ExamQuestion {
   id: number;
@@ -11,6 +10,11 @@ interface ExamQuestion {
   responseType: 'text' | 'table' | 'multiChoice' | 'differential';
   responseOptions?: string[];
   tableHeaders?: string[][];
+}
+
+interface CaseChunk {
+  chunk_id: number;
+  content: string;
 }
 
 // Fallback questions for page 1
@@ -118,16 +122,23 @@ export const useExamData = (pageNumber: number) => {
         if (testData) {
           setExamTitle(testData.test_name);
           
-          // Fix: Type check the case_info before using find method
+          // Handle case_info as any to avoid type issues
           if (Array.isArray(testData.case_info)) {
             // Find the case information for the current chunk/page
-            const chunkData = testData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
+            const caseArray = testData.case_info as any[];
+            const chunkData = caseArray.find(chunk => 
+              typeof chunk === 'object' && 
+              chunk !== null && 
+              'chunk_id' in chunk && 
+              chunk.chunk_id === pageNumber
+            );
+            
             if (chunkData && typeof chunkData === 'object' && 'content' in chunkData) {
-              setCaseInfo(String(chunkData.content)); // Convert to string to fix type error
+              setCaseInfo(String(chunkData.content));
             }
             
             // Determine total pages/chunks
-            setTotalPages(testData.case_info.length);
+            setTotalPages(caseArray.length);
           } else {
             console.error('Expected case_info to be an array, got:', typeof testData.case_info);
           }

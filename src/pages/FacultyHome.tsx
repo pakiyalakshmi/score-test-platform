@@ -1,70 +1,52 @@
 
-import Layout from "../components/Layout";
-import ExamCard from "../components/ExamCard";
+import { useEffect, useState } from "react";
+import Layout from "@/components/Layout";
+import { supabase } from "@/integrations/supabase/client";
 
 const FacultyHome = () => {
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    // Get current authenticated user
+    const getCurrentUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { email, user_metadata } = session.user;
+        // Set user name from metadata if available, otherwise use email
+        const displayName = user_metadata?.full_name || email?.split('@')[0] || "Faculty";
+        setUserName(displayName);
+        setUserEmail(email || "");
+      }
+    };
+    
+    getCurrentUser();
+  }, []);
+  
   return (
     <Layout 
-      userType="faculty"
-      userName="Dr. Christina Shenvi"
-      email="cshenvi@med.unc.edu"
+      userType="faculty" 
+      userName={userName || "Faculty"}
+      email={userEmail || ""}
     >
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Home</h1>
-          <p className="text-gray-600">Welcome Back, Dr. Shenvi.</p>
+          <h1 className="text-3xl font-bold text-gray-800">Faculty Dashboard</h1>
+          <p className="text-gray-600">Welcome back, {userName.split(' ')[0] || "Professor"}.</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <ExamCard 
-            title="Circulation Block CBL Final"
-            subtitle="Active Exam"
-            hours={2}
-            questions={36}
-            date="Aug 8"
-            buttonText="Monitor"
-            link="/faculty/exam/circulation-block"
-          />
-          
-          <ExamCard 
-            title="Circulation Practice Questions"
-            subtitle="Practice Questions"
-            percentage={100}
-            buttonText="Edit"
-            link="/faculty/practice/circulation"
-          />
-          
-          <ExamCard 
-            title="Create New Exam"
-            subtitle="Exam Builder"
-            buttonText="Create"
-            link="/faculty/create-exam"
-          />
-        </div>
-        
-        <div className="glass-card p-6 animate-fade-in">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">Recent Activity</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-2 border-b">
-              <div>
-                <p className="font-medium">Molecules to Cells Exam Completed</p>
-                <p className="text-sm text-gray-500">36 students submitted</p>
-              </div>
-              <span className="text-sm text-gray-500">Aug 1</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="glass-card p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Activity</h2>
+            <div className="py-10 flex items-center justify-center text-gray-400">
+              <p>No recent activity to display</p>
             </div>
-            <div className="flex items-center justify-between py-2 border-b">
-              <div>
-                <p className="font-medium">Circulation Practice Questions Updated</p>
-                <p className="text-sm text-gray-500">Added 5 new questions</p>
-              </div>
-              <span className="text-sm text-gray-500">Jul 28</span>
-            </div>
-            <div className="flex items-center justify-between py-2">
-              <div>
-                <p className="font-medium">Circulation Block CBL Final Published</p>
-                <p className="text-sm text-gray-500">Available to students Aug 8</p>
-              </div>
-              <span className="text-sm text-gray-500">Jul 25</span>
+          </div>
+          
+          <div className="glass-card p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Upcoming Tests</h2>
+            <div className="py-10 flex items-center justify-center text-gray-400">
+              <p>No upcoming tests scheduled</p>
             </div>
           </div>
         </div>

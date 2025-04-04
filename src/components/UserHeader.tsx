@@ -1,6 +1,7 @@
 
 import { Search, Bell } from "lucide-react";
 import { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface UserHeaderProps {
   userName: string;
@@ -38,13 +39,13 @@ const UserHeader = ({ userName, email, avatarUrl }: UserHeaderProps) => {
             <p className="text-xs text-gray-500">{email}</p>
           </div>
           
-          <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
+          <Avatar className="h-10 w-10">
             {avatarUrl ? (
-              <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+              <AvatarImage src={avatarUrl} alt={userName} />
             ) : (
-              <span className="text-lg font-medium text-gray-600">{userName.charAt(0)}</span>
+              <AvatarFallback>{userName.charAt(0).toUpperCase()}</AvatarFallback>
             )}
-          </div>
+          </Avatar>
         </div>
       </div>
     </div>
