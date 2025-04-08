@@ -3,6 +3,7 @@ import { Search, Bell } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
 interface UserHeaderProps {
   userName: string;
@@ -48,10 +49,10 @@ const UserHeader = ({ userName, email, avatarUrl }: UserHeaderProps) => {
       </div>
       
       <div className="flex items-center gap-6">
-        <button className="relative">
+        <Button variant="ghost" size="icon" className="relative">
           <Bell size={20} className="text-gray-600" />
           <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
+        </Button>
         
         <div className="flex items-center gap-3">
           <div className="text-right">

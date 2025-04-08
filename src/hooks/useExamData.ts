@@ -107,7 +107,7 @@ export const useExamData = (pageNumber: number) => {
         const { data: testData, error: testError } = await supabase
           .from('tests')
           .select('*')
-          .eq('test_id', 1) // Using test_id 1 for the CF case
+          .eq('test_id', 1)
           .single();
           
         if (testError) {
@@ -117,43 +117,38 @@ export const useExamData = (pageNumber: number) => {
         if (testData) {
           setExamTitle(testData.test_name);
           
-          // Fix: Type check the case_info before using find method
-          if (Array.isArray(testData.case_info)) {
-            // Find the case information for the current chunk/page
-            const chunkData = testData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
-            if (chunkData && typeof chunkData === 'object' && 'content' in chunkData) {
-              setCaseInfo(String(chunkData.content)); // Convert to string to fix type error
+          // Check if case_info is an array and has content
+          if (Array.isArray(testData.case_info) && testData.case_info.length > 0) {
+            // Find the chunk for the current page
+            const chunkIndex = pageNumber - 1; // Assuming 1-indexed pages
+            if (chunkIndex >= 0 && chunkIndex < testData.case_info.length) {
+              const chunk = testData.case_info[chunkIndex];
+              
+              // Type guard to check if chunk is an object with content property
+              if (chunk && typeof chunk === 'object' && 'content' in chunk) {
+                setCaseInfo(String(chunk.content));
+                
+                // Safely check for questions array
+                if ('questions' in chunk && Array.isArray(chunk.questions)) {
+                  console.log(`Fetched exam questions for page ${pageNumber}:`, chunk.questions);
+                  setQuestions(chunk.questions);
+                } else {
+                  console.log(`No questions found in chunk for page ${pageNumber}, using fallbacks`);
+                }
+              } else {
+                console.log(`Invalid chunk format for page ${pageNumber}`);
+                setCaseInfo(`Case information for page ${pageNumber} is not available.`);
+              }
             } else {
-              console.log(`No case info found for page ${pageNumber}`);
+              console.log(`Page ${pageNumber} is out of range (total: ${testData.case_info.length})`);
               setCaseInfo(`Case information for page ${pageNumber} is not available.`);
             }
             
-            // Determine total pages/chunks
+            // Set total pages based on number of chunks
             setTotalPages(testData.case_info.length);
           } else {
-            console.error('Expected case_info to be an array, got:', typeof testData.case_info);
-          }
-        }
-        
-        // Fetch questions for the current page - use page number as question_id for now
-        // In a real system, you would have a mapping between chunk/page and question IDs
-        const { data: questionData, error: questionError } = await supabase
-          .from('tests')
-          .select('case_info')
-          .eq('test_id', 1)
-          .single();
-          
-        if (questionError) {
-          throw questionError;
-        }
-        
-        if (questionData && questionData.case_info && Array.isArray(questionData.case_info)) {
-          const currentChunk = questionData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
-          if (currentChunk && currentChunk.questions) {
-            console.log(`Fetched exam questions for page ${pageNumber}:`, currentChunk.questions);
-            setQuestions(currentChunk.questions);
-          } else {
-            console.log(`No questions found for page ${pageNumber}, using fallbacks`);
+            console.error('Expected case_info to be a non-empty array, got:', typeof testData.case_info);
+            setCaseInfo(`Case information is not available in the expected format.`);
           }
         }
       } catch (error) {

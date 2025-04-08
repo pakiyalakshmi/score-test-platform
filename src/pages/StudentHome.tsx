@@ -17,10 +17,14 @@ const StudentHome = () => {
     
     // Get current user session
     const getUserInfo = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUserName(session.user.user_metadata?.full_name || "Student");
-        setUserEmail(session.user.email || "");
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUserName(session.user.user_metadata?.full_name || "Student");
+          setUserEmail(session.user.email || "");
+        }
+      } catch (error) {
+        console.error("Error fetching user info:", error);
       }
     };
     
