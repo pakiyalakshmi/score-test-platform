@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Layout from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const FacultyHome = () => {
   const [userName, setUserName] = useState("");
@@ -10,13 +11,25 @@ const FacultyHome = () => {
   useEffect(() => {
     // Get current authenticated user
     const getCurrentUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { email, user_metadata } = session.user;
-        // Set user name from metadata if available, otherwise use email
-        const displayName = user_metadata?.full_name || email?.split('@')[0] || "Faculty";
-        setUserName(displayName);
-        setUserEmail(email || "");
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth error:", error);
+          toast.error("Failed to get user session");
+          return;
+        }
+        
+        if (session?.user) {
+          const { email, user_metadata } = session.user;
+          // Set user name from metadata if available, otherwise use email
+          const displayName = user_metadata?.full_name || email?.split('@')[0] || "Faculty";
+          setUserName(displayName);
+          setUserEmail(email || "");
+          console.log("Loaded user info:", { displayName, email });
+        }
+      } catch (err) {
+        console.error("Error getting user session:", err);
       }
     };
     

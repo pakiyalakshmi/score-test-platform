@@ -12,6 +12,7 @@ interface ExamQuestion {
   tableHeaders?: string[][];
 }
 
+// Define a simple interface for case chunks
 interface CaseChunk {
   chunk_id: number;
   content: string;
@@ -122,13 +123,13 @@ export const useExamData = (pageNumber: number) => {
         if (testData) {
           setExamTitle(testData.test_name);
           
-          // Handle case_info as any to avoid type issues
-          if (Array.isArray(testData.case_info)) {
+          // Handle case_info safely
+          if (testData.case_info && Array.isArray(testData.case_info)) {
             // Find the case information for the current chunk/page
             const caseArray = testData.case_info as any[];
-            const chunkData = caseArray.find(chunk => 
+            const chunkData = caseArray.find((chunk: any) => 
+              chunk && 
               typeof chunk === 'object' && 
-              chunk !== null && 
               'chunk_id' in chunk && 
               chunk.chunk_id === pageNumber
             );
@@ -144,22 +145,20 @@ export const useExamData = (pageNumber: number) => {
           }
         }
         
-        // Fetch questions for the current page
+        // Fetch questions for the current page - Fix: use question_id, not chunk_id
         const { data: questionData, error: questionError } = await supabase
           .from('exam_questions')
-          .select('*')
-          .eq('chunk_id', pageNumber)
-          .order('question_id');
+          .select('*');
           
         if (questionError) {
           throw questionError;
         }
         
         if (questionData && questionData.length > 0) {
-          console.log(`Fetched exam questions for page ${pageNumber}:`, questionData);
+          console.log(`Fetched exam questions:`, questionData);
           setQuestions(questionData);
         } else {
-          console.log(`No questions found for page ${pageNumber}, using fallbacks`);
+          console.log(`No questions found, using fallbacks`);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
