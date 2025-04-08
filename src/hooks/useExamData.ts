@@ -12,6 +12,20 @@ interface ExamQuestion {
   tableHeaders?: string[][];
 }
 
+// Define proper types for the case info data structure
+interface ChunkContent {
+  content: string;
+  questions?: {
+    question_id: number;
+    question_text: string;
+    clin_reasoning?: string;
+    answer_format?: {
+      type: 'text' | 'table' | 'multiChoice' | 'differential';
+      tableHeaders?: string[][];
+    };
+  }[];
+}
+
 // Fallback questions for page 1
 const page1Questions = [
   {
@@ -121,14 +135,18 @@ export const useExamData = (pageNumber: number) => {
           if (Array.isArray(testData.case_info) && testData.case_info.length > 0) {
             // Find the chunk for the current page
             const chunkIndex = pageNumber - 1; // Assuming 1-indexed pages
+            
             if (chunkIndex >= 0 && chunkIndex < testData.case_info.length) {
-              const chunk = testData.case_info[chunkIndex];
+              // Type assertion to handle the chunk properly
+              const chunk = testData.case_info[chunkIndex] as unknown as ChunkContent;
               
-              // Type guard to check if chunk is an object with content property
-              if (chunk && typeof chunk === 'object' && 'content' in chunk) {
-                setCaseInfo(String(chunk.content));
+              if (chunk && typeof chunk === 'object') {
+                // Set case info content if available
+                if ('content' in chunk && chunk.content) {
+                  setCaseInfo(String(chunk.content));
+                }
                 
-                // Safely check for questions array
+                // Handle questions if available
                 if ('questions' in chunk && Array.isArray(chunk.questions)) {
                   console.log(`Fetched exam questions for page ${pageNumber}:`, chunk.questions);
                   setQuestions(chunk.questions);
