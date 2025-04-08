@@ -152,6 +152,7 @@ export const useExamData = (pageNumber: number) => {
                   setQuestions(chunk.questions);
                 } else {
                   console.log(`No questions found in chunk for page ${pageNumber}, using fallbacks`);
+                  // If no questions in the chunk, we'll use fallbacks below
                 }
               } else {
                 console.log(`Invalid chunk format for page ${pageNumber}`);
