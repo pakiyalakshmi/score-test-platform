@@ -71,6 +71,7 @@ export const useExamData = (pageNumber: number) => {
   const [currentPage, setCurrentPage] = useState<number>(pageNumber);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [availablePages, setAvailablePages] = useState<number[]>([1]);
+  const [pageLoadError, setPageLoadError] = useState<boolean>(false);
 
   // Transform database questions into the format expected by QuestionForm
   const formatQuestionsForDisplay = (questions: any[]): ExamQuestion[] => {
@@ -89,6 +90,7 @@ export const useExamData = (pageNumber: number) => {
       setLoading(true);
       setQuestions([]);
       setCaseInfo('');
+      setPageLoadError(false);
       setCurrentPage(pageNumber);
     }
   }, [pageNumber, currentPage]);
@@ -116,6 +118,7 @@ export const useExamData = (pageNumber: number) => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setPageLoadError(false);
         
         // Fetch the test information first
         const { data: testData, error: testError } = await supabase
@@ -125,6 +128,8 @@ export const useExamData = (pageNumber: number) => {
           .single();
           
         if (testError) {
+          console.error('Error fetching test data:', testError);
+          setPageLoadError(true);
           throw testError;
         }
         
@@ -161,6 +166,7 @@ export const useExamData = (pageNumber: number) => {
             } else {
               console.log(`Page ${pageNumber} is out of range (total: ${testData.case_info.length})`);
               setCaseInfo(`Case information for page ${pageNumber} is not available.`);
+              setPageLoadError(true);
             }
             
             // Set total pages based on number of chunks
@@ -168,11 +174,13 @@ export const useExamData = (pageNumber: number) => {
           } else {
             console.error('Expected case_info to be a non-empty array, got:', typeof testData.case_info);
             setCaseInfo(`Case information is not available in the expected format.`);
+            setPageLoadError(true);
           }
         }
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Failed to load exam data');
+        setPageLoadError(true);
       } finally {
         setLoading(false);
       }
@@ -194,6 +202,7 @@ export const useExamData = (pageNumber: number) => {
     totalPages,
     currentPage: pageNumber,
     availablePages,
-    unlockNextPage
+    unlockNextPage,
+    pageLoadError
   };
 };

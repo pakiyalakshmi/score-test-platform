@@ -10,8 +10,9 @@ import { useTimer } from '../hooks/useTimer';
 import { saveAnswers, getAllAnswers, checkAllQuestionsAnswered, submitExamAnswers, clearExamAnswers } from '../utils/examAnswers';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, ArrowRight, Lock } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ArrowLeft, ArrowRight, Lock, AlertCircle } from "lucide-react";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const ExamPage = () => {
   const { page } = useParams<{ page: string }>();
@@ -29,7 +30,8 @@ const ExamPage = () => {
     displayQuestions,
     totalPages,
     availablePages,
-    unlockNextPage
+    unlockNextPage,
+    pageLoadError
   } = useExamData(pageNumber);
   
   useEffect(() => {
@@ -47,7 +49,7 @@ const ExamPage = () => {
     
     const savedAnswers = getAllAnswers();
     setAnswers(savedAnswers);
-  }, [pageNumber, availablePages]);
+  }, [pageNumber, availablePages, navigate]);
   
   useEffect(() => {
     setCurrentQuestionIndex(0);
@@ -76,6 +78,7 @@ const ExamPage = () => {
   
   const handleNext = () => {
     if (!checkAllQuestionsAnswered(displayQuestions, answers)) {
+      toast.error("Please answer all questions before proceeding");
       return;
     }
     
@@ -95,6 +98,7 @@ const ExamPage = () => {
   
   const handleSubmit = () => {
     if (!checkAllQuestionsAnswered(displayQuestions, answers)) {
+      toast.error("Please answer all questions before submitting");
       return;
     }
     
@@ -131,34 +135,56 @@ const ExamPage = () => {
   const socialHistory = pageNumber === 2 ? 
     "Mr. Power is a retired engineer. He is married and has one adult child. Mr. Power smoked 1 pack of cigarettes per day from about age 20 to 35 and does not currently smoke. He denies alcohol or drug use. He exercises by walking 2 miles every day. He tries to eat a diet low in sodium and high in fruits and vegetables." : undefined;
 
-  // Function to render page navigation buttons
+  // Function to render page navigation using pagination component
   const renderPageNavigation = () => {
-    const pageButtons = [];
-
-    for (let i = 1; i <= totalPages; i++) {
-      const isAvailable = availablePages.includes(i);
-      const isCurrent = i === pageNumber;
-
-      pageButtons.push(
-        <button
-          key={i}
-          onClick={() => isAvailable && navigate(`/exam/${i}`)}
-          disabled={!isAvailable}
-          className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-1
-            ${isCurrent ? 'bg-clinicus-blue text-white' : isAvailable ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
-        >
-          {!isAvailable && <Lock size={12} />}
-          <span>Page {i}</span>
-        </button>
-      );
-    }
-
     return (
-      <div className="flex space-x-2 mb-4">
-        {pageButtons}
-      </div>
+      <Pagination className="mb-4">
+        <PaginationContent>
+          {Array.from({ length: totalPages }).map((_, i) => {
+            const pageNum = i + 1;
+            const isAvailable = availablePages.includes(pageNum);
+            const isCurrent = pageNum === pageNumber;
+            
+            return (
+              <PaginationItem key={pageNum}>
+                <PaginationLink
+                  onClick={() => isAvailable && navigate(`/exam/${pageNum}`)}
+                  className={`flex items-center gap-1 ${!isAvailable ? 'cursor-not-allowed opacity-50' : ''}`}
+                  isActive={isCurrent}
+                  disabled={!isAvailable}
+                >
+                  {!isAvailable && <Lock size={12} />}
+                  Page {pageNum}
+                </PaginationLink>
+              </PaginationItem>
+            );
+          })}
+        </PaginationContent>
+      </Pagination>
     );
   };
+
+  if (pageLoadError) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex flex-col items-center justify-center">
+        <Alert className="max-w-md">
+          <AlertCircle className="h-5 w-5 text-red-500" />
+          <AlertTitle>Error loading exam data</AlertTitle>
+          <AlertDescription>
+            There was a problem loading the exam data for this page. Please try again or return to the previous page.
+          </AlertDescription>
+        </Alert>
+        <div className="mt-6">
+          <button 
+            onClick={() => navigate('/student/tests')} 
+            className="px-4 py-2 bg-clinicus-blue text-white rounded-md"
+          >
+            Return to Tests
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gray-50 p-2 md:p-4 lg:p-6">
@@ -236,7 +262,7 @@ const ExamPage = () => {
                     examTitle={examTitle}
                     timeRemaining={displayTime}
                     caseNumber={pageNumber}
-                    caseName={pageNumber === 1 ? "Lauren King" : "MP"}
+                    caseName={pageNumber === 1 ? "Lauren King" : "Mark Power"}
                     questions={displayQuestions}
                     onNext={handleNext}
                     onSubmit={handleSubmit}
