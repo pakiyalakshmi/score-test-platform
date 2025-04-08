@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from '@/integrations/supabase/types';
 
 interface ExamQuestion {
   id: number;
@@ -10,12 +11,6 @@ interface ExamQuestion {
   responseType: 'text' | 'table' | 'multiChoice' | 'differential';
   responseOptions?: string[];
   tableHeaders?: string[][];
-}
-
-// Define a simple interface for case chunks
-interface CaseChunk {
-  chunk_id: number;
-  content: string;
 }
 
 // Fallback questions for page 1
@@ -123,42 +118,37 @@ export const useExamData = (pageNumber: number) => {
         if (testData) {
           setExamTitle(testData.test_name);
           
-          // Handle case_info safely
-          if (testData.case_info && Array.isArray(testData.case_info)) {
+          // Fix: Type check the case_info before using find method
+          if (Array.isArray(testData.case_info)) {
             // Find the case information for the current chunk/page
-            const caseArray = testData.case_info as any[];
-            const chunkData = caseArray.find((chunk: any) => 
-              chunk && 
-              typeof chunk === 'object' && 
-              'chunk_id' in chunk && 
-              chunk.chunk_id === pageNumber
-            );
-            
+            const chunkData = testData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
             if (chunkData && typeof chunkData === 'object' && 'content' in chunkData) {
-              setCaseInfo(String(chunkData.content));
+              setCaseInfo(String(chunkData.content)); // Convert to string to fix type error
             }
             
             // Determine total pages/chunks
-            setTotalPages(caseArray.length);
+            setTotalPages(testData.case_info.length);
           } else {
             console.error('Expected case_info to be an array, got:', typeof testData.case_info);
           }
         }
         
-        // Fetch questions for the current page - Fix: use question_id, not chunk_id
+        // Fetch questions for the current page
         const { data: questionData, error: questionError } = await supabase
           .from('exam_questions')
-          .select('*');
+          .select('*')
+          .eq('chunk_id', pageNumber)
+          .order('question_id');
           
         if (questionError) {
           throw questionError;
         }
         
         if (questionData && questionData.length > 0) {
-          console.log(`Fetched exam questions:`, questionData);
+          console.log(`Fetched exam questions for page ${pageNumber}:`, questionData);
           setQuestions(questionData);
         } else {
-          console.log(`No questions found, using fallbacks`);
+          console.log(`No questions found for page ${pageNumber}, using fallbacks`);
         }
       } catch (error) {
         console.error('Error fetching data:', error);

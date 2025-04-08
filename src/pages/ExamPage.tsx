@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -45,7 +46,7 @@ const ExamPage = () => {
     
     const savedAnswers = getAllAnswers();
     setAnswers(savedAnswers);
-  }, [pageNumber, availablePages, navigate]);
+  }, [pageNumber, availablePages]);
   
   useEffect(() => {
     setCurrentQuestionIndex(0);
@@ -128,6 +129,7 @@ const ExamPage = () => {
   const socialHistory = pageNumber === 2 ? 
     "Mr. Power is a retired engineer. He is married and has one adult child. Mr. Power smoked 1 pack of cigarettes per day from about age 20 to 35 and does not currently smoke. He denies alcohol or drug use. He exercises by walking 2 miles every day. He tries to eat a diet low in sodium and high in fruits and vegetables." : undefined;
 
+  // Function to render page navigation buttons
   const renderPageNavigation = () => {
     const pageButtons = [];
 

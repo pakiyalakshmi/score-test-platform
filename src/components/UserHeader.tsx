@@ -1,8 +1,6 @@
 
 import { Search, Bell } from "lucide-react";
-import { useState, useEffect } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 interface UserHeaderProps {
   userName: string;
@@ -12,30 +10,6 @@ interface UserHeaderProps {
 
 const UserHeader = ({ userName, email, avatarUrl }: UserHeaderProps) => {
   const [searchValue, setSearchValue] = useState("");
-  const [currentUser, setCurrentUser] = useState({ name: userName, email });
-  
-  // Verify the user information when component mounts or props change
-  useEffect(() => {
-    const verifyUser = async () => {
-      // Only verify if we need to (if props seem empty or default)
-      if (!userName || userName === "Faculty" || !email) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const { email: userEmail, user_metadata } = session.user;
-          const displayName = user_metadata?.full_name || userEmail?.split('@')[0] || userName;
-          setCurrentUser({
-            name: displayName,
-            email: userEmail || email
-          });
-        }
-      } else {
-        // Use props if they seem valid
-        setCurrentUser({ name: userName, email });
-      }
-    };
-    
-    verifyUser();
-  }, [userName, email]);
   
   return (
     <div className="w-full p-4 flex items-center justify-between border-b">
@@ -45,7 +19,7 @@ const UserHeader = ({ userName, email, avatarUrl }: UserHeaderProps) => {
         </div>
         <input
           type="text"
-          className="search-field w-full pl-10 pr-3 py-2 border rounded-md"
+          className="search-field"
           placeholder="Enter any topic like 'stable angina' to review completed questions"
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
@@ -60,17 +34,17 @@ const UserHeader = ({ userName, email, avatarUrl }: UserHeaderProps) => {
         
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="font-medium text-sm">{currentUser.name}</p>
-            <p className="text-xs text-gray-500">{currentUser.email}</p>
+            <p className="font-medium text-sm">{userName}</p>
+            <p className="text-xs text-gray-500">{email}</p>
           </div>
           
-          <Avatar className="h-10 w-10">
+          <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
             {avatarUrl ? (
-              <AvatarImage src={avatarUrl} alt={currentUser.name} />
+              <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
             ) : (
-              <AvatarFallback>{currentUser.name.charAt(0).toUpperCase()}</AvatarFallback>
+              <span className="text-lg font-medium text-gray-600">{userName.charAt(0)}</span>
             )}
-          </Avatar>
+          </div>
         </div>
       </div>
     </div>
