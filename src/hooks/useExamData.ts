@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from '@/integrations/supabase/types';
 
 interface ExamQuestion {
   id: number;
@@ -124,6 +123,9 @@ export const useExamData = (pageNumber: number) => {
             const chunkData = testData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
             if (chunkData && typeof chunkData === 'object' && 'content' in chunkData) {
               setCaseInfo(String(chunkData.content)); // Convert to string to fix type error
+            } else {
+              console.log(`No case info found for page ${pageNumber}`);
+              setCaseInfo(`Case information for page ${pageNumber} is not available.`);
             }
             
             // Determine total pages/chunks
@@ -133,22 +135,26 @@ export const useExamData = (pageNumber: number) => {
           }
         }
         
-        // Fetch questions for the current page
+        // Fetch questions for the current page - use page number as question_id for now
+        // In a real system, you would have a mapping between chunk/page and question IDs
         const { data: questionData, error: questionError } = await supabase
-          .from('exam_questions')
-          .select('*')
-          .eq('chunk_id', pageNumber)
-          .order('question_id');
+          .from('tests')
+          .select('case_info')
+          .eq('test_id', 1)
+          .single();
           
         if (questionError) {
           throw questionError;
         }
         
-        if (questionData && questionData.length > 0) {
-          console.log(`Fetched exam questions for page ${pageNumber}:`, questionData);
-          setQuestions(questionData);
-        } else {
-          console.log(`No questions found for page ${pageNumber}, using fallbacks`);
+        if (questionData && questionData.case_info && Array.isArray(questionData.case_info)) {
+          const currentChunk = questionData.case_info.find((chunk: any) => chunk.chunk_id === pageNumber);
+          if (currentChunk && currentChunk.questions) {
+            console.log(`Fetched exam questions for page ${pageNumber}:`, currentChunk.questions);
+            setQuestions(currentChunk.questions);
+          } else {
+            console.log(`No questions found for page ${pageNumber}, using fallbacks`);
+          }
         }
       } catch (error) {
         console.error('Error fetching data:', error);

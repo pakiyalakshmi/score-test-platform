@@ -1,18 +1,36 @@
 
+import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import ExamCard from "../components/ExamCard";
+import { supabase } from "@/integrations/supabase/client";
 
 const FacultyHome = () => {
+  const [userName, setUserName] = useState("Dr. Christina Shenvi");
+  const [userEmail, setUserEmail] = useState("cshenvi@med.unc.edu");
+  
+  useEffect(() => {
+    // Get current user session
+    const getUserInfo = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUserName(session.user.user_metadata?.full_name || "Faculty");
+        setUserEmail(session.user.email || "");
+      }
+    };
+    
+    getUserInfo();
+  }, []);
+  
   return (
     <Layout 
       userType="faculty"
-      userName="Dr. Christina Shenvi"
-      email="cshenvi@med.unc.edu"
+      userName={userName}
+      email={userEmail}
     >
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Home</h1>
-          <p className="text-gray-600">Welcome Back, Dr. Shenvi.</p>
+          <p className="text-gray-600">Welcome Back, {userName.split(" ")[0]}.</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -23,7 +41,7 @@ const FacultyHome = () => {
             questions={36}
             date="Aug 8"
             buttonText="Monitor"
-            link="/faculty/exam/circulation-block"
+            link="/exam/1"
           />
           
           <ExamCard 

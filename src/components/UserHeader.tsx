@@ -1,6 +1,8 @@
 
 import { Search, Bell } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface UserHeaderProps {
   userName: string;
@@ -10,6 +12,25 @@ interface UserHeaderProps {
 
 const UserHeader = ({ userName, email, avatarUrl }: UserHeaderProps) => {
   const [searchValue, setSearchValue] = useState("");
+  const [userInfo, setUserInfo] = useState({ name: userName, email: email });
+  
+  useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setUserInfo({
+            name: userName || session.user?.user_metadata?.full_name || 'User',
+            email: session.user?.email || email
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+      }
+    };
+    
+    getUserInfo();
+  }, [userName, email]);
   
   return (
     <div className="w-full p-4 flex items-center justify-between border-b">
@@ -19,7 +40,7 @@ const UserHeader = ({ userName, email, avatarUrl }: UserHeaderProps) => {
         </div>
         <input
           type="text"
-          className="search-field"
+          className="search-field w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-clinicus-blue focus:border-clinicus-blue"
           placeholder="Enter any topic like 'stable angina' to review completed questions"
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
@@ -34,17 +55,19 @@ const UserHeader = ({ userName, email, avatarUrl }: UserHeaderProps) => {
         
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="font-medium text-sm">{userName}</p>
-            <p className="text-xs text-gray-500">{email}</p>
+            <p className="font-medium text-sm">{userInfo.name}</p>
+            <p className="text-xs text-gray-500">{userInfo.email}</p>
           </div>
           
-          <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
+          <Avatar className="w-10 h-10">
             {avatarUrl ? (
-              <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+              <AvatarImage src={avatarUrl} alt={userInfo.name} />
             ) : (
-              <span className="text-lg font-medium text-gray-600">{userName.charAt(0)}</span>
+              <AvatarFallback className="bg-clinicus-blue text-white">
+                {userInfo.name.charAt(0)}
+              </AvatarFallback>
             )}
-          </div>
+          </Avatar>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import QuestionForm from '../components/QuestionForm';
 import PatientInfoCard from '../components/exam/PatientInfoCard';
@@ -11,6 +11,7 @@ import { saveAnswers, getAllAnswers, checkAllQuestionsAnswered, submitExamAnswer
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, ArrowRight, Lock } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const ExamPage = () => {
   const { page } = useParams<{ page: string }>();
@@ -117,6 +118,7 @@ const ExamPage = () => {
   
   const patientWords = caseInfo || "Loading case information...";
   
+  // Only show the relevant medical history for the current page
   const additionalHistory = pageNumber === 2 ? 
     "You ask Mr. Power some additional questions about his symptoms. He denies any chest pain, chest pressure, orthopnea, paroxysmal nocturnal dyspnea, cough, sputum production, wheezing, hemoptysis, fever, chills, dizziness, lightheadedness, syncope, excessive daytime somnolence, tremor, skin or hair changes, heat or cold intolerance, or unintentional weight loss. He does endorse some mild bilateral lower extremity edema over the past few weeks." : undefined;
   
@@ -211,12 +213,15 @@ const ExamPage = () => {
                   />
                 </div>
                 
-                <MedicalHistorySection
-                  additionalHistory={additionalHistory}
-                  pastMedicalHistory={pastMedicalHistory}
-                  medications={medications}
-                  socialHistory={socialHistory}
-                />
+                {/* Only show medical history tabs for pages that have them */}
+                {(pageNumber === 2) && (
+                  <MedicalHistorySection
+                    additionalHistory={additionalHistory}
+                    pastMedicalHistory={pastMedicalHistory}
+                    medications={medications}
+                    socialHistory={socialHistory}
+                  />
+                )}
               </ScrollArea>
             </ResizablePanel>
             
