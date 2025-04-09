@@ -49,6 +49,7 @@ const ExamPage = () => {
     // Get only the answers for the current page questions
     const pageAnswers = getCurrentPageAnswers(pageNumber, displayQuestions);
     setAnswers(pageAnswers);
+    console.log('Loaded answers for page', pageNumber, pageAnswers);
   }, [pageNumber, availablePages, navigate, displayQuestions]);
   
   useEffect(() => {
@@ -77,6 +78,7 @@ const ExamPage = () => {
     
     // Save only the current page's answers
     saveAnswers(answers);
+    console.log('Saved answers for page', pageNumber, answers);
     
     if (pageNumber < totalPages) {
       unlockNextPage();

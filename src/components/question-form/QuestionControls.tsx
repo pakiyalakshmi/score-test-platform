@@ -7,6 +7,7 @@ interface QuestionControlsProps {
   onPrevious: () => void;
   onNext: () => void;
   onSubmit: () => void;
+  isNextDisabled?: boolean;
 }
 
 const QuestionControls: React.FC<QuestionControlsProps> = ({
@@ -14,7 +15,8 @@ const QuestionControls: React.FC<QuestionControlsProps> = ({
   totalQuestions,
   onPrevious,
   onNext,
-  onSubmit
+  onSubmit,
+  isNextDisabled = false
 }) => {
   return (
     <div className="flex justify-between mt-6">
@@ -32,8 +34,13 @@ const QuestionControls: React.FC<QuestionControlsProps> = ({
 
       {activeQuestionIndex < totalQuestions - 1 ? (
         <button 
-          className="px-4 py-2 bg-clinicus-blue text-white rounded-md text-sm font-medium"
+          className={`px-4 py-2 rounded-md text-sm font-medium ${
+            isNextDisabled 
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+              : 'bg-clinicus-blue text-white hover:bg-blue-600'
+          }`}
           onClick={onNext}
+          disabled={isNextDisabled}
         >
           Next Question
         </button>
