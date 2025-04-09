@@ -151,7 +151,6 @@ const ExamPage = () => {
                   onClick={() => isAvailable && navigate(`/exam/${pageNum}`)}
                   className={`flex items-center gap-1 ${!isAvailable ? 'cursor-not-allowed opacity-50' : ''}`}
                   isActive={isCurrent}
-                  disabled={!isAvailable}
                 >
                   {!isAvailable && <Lock size={12} />}
                   Page {pageNum}
