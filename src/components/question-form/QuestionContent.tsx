@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 interface QuestionContentProps {
   question: {
@@ -29,12 +31,12 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
       )}
 
       {question.responseType === 'text' && (
-        <textarea
-          className="w-full border border-gray-300 rounded-md p-3 min-h-[120px]"
+        <Textarea
+          className="w-full min-h-[120px]"
           placeholder="Type your response here..."
           value={currentAnswer || ''}
           onChange={(e) => onInputChange(question.id, e.target.value)}
-        ></textarea>
+        />
       )}
 
       {question.responseType === 'differential' && (
@@ -47,9 +49,9 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
             return (
               <div key={i} className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">{i+1}. </span>
-                <input
+                <Input
                   type="text"
-                  className="w-full border border-gray-300 rounded-md p-2"
+                  className="w-full"
                   placeholder={`Item ${i+1}`}
                   value={answersArray[i] || ''}
                   onChange={(e) => {
@@ -84,9 +86,9 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
                   <tr key={rowIndex}>
                     {question.tableHeaders && question.tableHeaders[0].map((_, colIndex) => (
                       <td key={colIndex} className="border border-gray-300 p-2">
-                        <input
+                        <Input
                           type="text"
-                          className="w-full border-none focus:outline-none"
+                          className="w-full border-none focus:outline-none bg-transparent"
                           value={tableData[rowIndex]?.[colIndex] || ''}
                           onChange={(e) => {
                             const newTableData = {...tableData};
