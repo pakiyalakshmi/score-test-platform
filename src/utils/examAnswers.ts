@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,6 +27,23 @@ export const saveAnswers = async (answers: Record<string, any>) => {
 
 export const getAllAnswers = (): Record<string, any> => {
   return JSON.parse(localStorage.getItem('examAnswers') || '{}');
+};
+
+export const getCurrentPageAnswers = (
+  pageNumber: number, 
+  displayQuestions: Array<{ id: number }>
+): Record<string, any> => {
+  const allAnswers = getAllAnswers();
+  const pageAnswers: Record<string, any> = {};
+  
+  // Only include answers for questions on the current page
+  displayQuestions.forEach(question => {
+    if (allAnswers[question.id]) {
+      pageAnswers[question.id] = allAnswers[question.id];
+    }
+  });
+  
+  return pageAnswers;
 };
 
 export const checkAllQuestionsAnswered = (
@@ -117,6 +133,7 @@ export const submitExamAnswers = async (answers: Record<string, any>): Promise<b
 
 export const clearExamAnswers = () => {
   localStorage.removeItem('examAnswers');
+  localStorage.removeItem('availableExamPages');
   // Don't clear the completion time when clearing answers
   // as we want it to persist for the results page
 };

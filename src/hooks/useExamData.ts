@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from "@/integrations/supabase/client";
@@ -26,42 +25,123 @@ interface ChunkContent {
   }[];
 }
 
-// Fallback questions for page 1
-const page1Questions = [
-  {
-    id: 1,
-    title: "What is the chief complaint?",
-    description: "Limit your response to 50 characters.",
-    responseType: 'text' as const,
-  },
-  {
-    id: 2,
-    title: "List four diagnoses on your differential. Include at least 2 must-not-miss diagnoses.",
-    responseType: 'differential' as const,
-  },
-  {
-    id: 3,
-    title: "Ask five review of system questions to refine your Ddx, and list one underlying diagnosis each may suggest if present.",
-    responseType: 'table' as const,
-    tableHeaders: [['Question', 'Underlying Diagnosis']],
+// Fallback questions for different pages - with unique IDs per page
+const getFallbackQuestions = (pageNumber: number) => {
+  // Base questions for page 1
+  if (pageNumber === 1) {
+    return [
+      {
+        id: 1,
+        title: "What is the chief complaint?",
+        description: "Limit your response to 50 characters.",
+        responseType: 'text' as const,
+      },
+      {
+        id: 2,
+        title: "List four diagnoses on your differential. Include at least 2 must-not-miss diagnoses.",
+        responseType: 'differential' as const,
+      },
+      {
+        id: 3,
+        title: "Ask five review of system questions to refine your Ddx, and list one underlying diagnosis each may suggest if present.",
+        responseType: 'table' as const,
+        tableHeaders: [['Question', 'Underlying Diagnosis']],
+      }
+    ];
   }
-];
-
-// Fallback questions for page 2
-const page2Questions = [
-  {
-    id: 4,
-    title: "List three pertinent positive/negative findings, the diagnosis it relates to, and whether it makes it more/less likely from the provided history.",
-    responseType: 'table' as const,
-    tableHeaders: [['Pertinent Positive/ Negative', 'Diagnosis it relates to', 'Is the Diagnosis More or Less Likely']],
-  },
-  {
-    id: 5,
-    title: "Besides the vital signs, list four physical exam findings, the diagnosis it relates to, and whether it makes it more/less likely.",
-    responseType: 'table' as const,
-    tableHeaders: [['Physical Exam Finding', 'Diagnosis it relates to', 'Is the Diagnosis More or Less Likely']],
+  
+  // Base questions for page 2
+  if (pageNumber === 2) {
+    return [
+      {
+        id: 4,
+        title: "List three pertinent positive/negative findings, the diagnosis it relates to, and whether it makes it more/less likely from the provided history.",
+        responseType: 'table' as const,
+        tableHeaders: [['Pertinent Positive/ Negative', 'Diagnosis it relates to', 'Is the Diagnosis More or Less Likely']],
+      },
+      {
+        id: 5,
+        title: "Besides the vital signs, list four physical exam findings, the diagnosis it relates to, and whether it makes it more/less likely.",
+        responseType: 'table' as const,
+        tableHeaders: [['Physical Exam Finding', 'Diagnosis it relates to', 'Is the Diagnosis More or Less Likely']],
+      }
+    ];
   }
-];
+  
+  // Page 3 questions
+  if (pageNumber === 3) {
+    return [
+      {
+        id: 6,
+        title: "What is the most likely diagnosis for Mr. Power?",
+        responseType: 'text' as const,
+      },
+      {
+        id: 7,
+        title: "List three lab/imaging tests you would order to confirm the diagnosis.",
+        responseType: 'table' as const,
+        tableHeaders: [['Test', 'Rationale']],
+      }
+    ];
+  }
+  
+  // Additional fallback questions for higher pages (with unique IDs)
+  if (pageNumber === 4) {
+    return [
+      {
+        id: 8, // Unique ID for page 4
+        title: "List two treatment options for Mr. Power's condition.",
+        responseType: 'table' as const,
+        tableHeaders: [['Treatment Option', 'Rationale']],
+      },
+      {
+        id: 9, // Unique ID for page 4
+        title: "What is the most concerning complication of the patient's condition?",
+        responseType: 'text' as const,
+      }
+    ];
+  }
+  
+  if (pageNumber === 5) {
+    return [
+      {
+        id: 10, // Unique ID for page 5
+        title: "What is the long-term prognosis for this patient?",
+        responseType: 'text' as const,
+      },
+      {
+        id: 11, // Unique ID for page 5
+        title: "List three follow-up instructions for this patient.",
+        responseType: 'table' as const,
+        tableHeaders: [['Follow-up Instruction', 'Timeframe']],
+      }
+    ];
+  }
+  
+  if (pageNumber === 6) {
+    return [
+      {
+        id: 12, // Unique ID for page 6
+        title: "Write a brief summary of the patient case.",
+        responseType: 'text' as const,
+      },
+      {
+        id: 13, // Unique ID for page 6
+        title: "What are the key learning points from this case?",
+        responseType: 'differential' as const,
+      }
+    ];
+  }
+  
+  // Default fallback for any other pages
+  return [
+    {
+      id: 100 + pageNumber, // Dynamic unique ID
+      title: `Question for page ${pageNumber}`,
+      responseType: 'text' as const,
+    }
+  ];
+};
 
 export const useExamData = (pageNumber: number) => {
   const [loading, setLoading] = useState(true);
@@ -189,10 +269,10 @@ export const useExamData = (pageNumber: number) => {
     fetchData();
   }, [pageNumber]);
 
-  // Use database questions if available, otherwise use fallbacks
+  // Use database questions if available, otherwise use fallbacks with unique IDs per page
   const displayQuestions = questions.length > 0 
     ? formatQuestionsForDisplay(questions) 
-    : (pageNumber === 1 ? page1Questions : page2Questions);
+    : getFallbackQuestions(pageNumber);
 
   return {
     loading,

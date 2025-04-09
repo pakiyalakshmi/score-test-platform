@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -7,7 +6,7 @@ import PatientInfoCard from '../components/exam/PatientInfoCard';
 import MedicalHistorySection from '../components/exam/MedicalHistorySection';
 import { useExamData } from '../hooks/useExamData';
 import { useTimer } from '../hooks/useTimer';
-import { saveAnswers, getAllAnswers, checkAllQuestionsAnswered, submitExamAnswers, clearExamAnswers } from '../utils/examAnswers';
+import { saveAnswers, getAllAnswers, getCurrentPageAnswers, checkAllQuestionsAnswered, submitExamAnswers, clearExamAnswers } from '../utils/examAnswers';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, ArrowRight, Lock, AlertCircle } from "lucide-react";
@@ -47,9 +46,10 @@ const ExamPage = () => {
       return;
     }
     
-    const savedAnswers = getAllAnswers();
-    setAnswers(savedAnswers);
-  }, [pageNumber, availablePages, navigate]);
+    // Get only the answers for the current page questions
+    const pageAnswers = getCurrentPageAnswers(pageNumber, displayQuestions);
+    setAnswers(pageAnswers);
+  }, [pageNumber, availablePages, navigate, displayQuestions]);
   
   useEffect(() => {
     setCurrentQuestionIndex(0);
@@ -69,19 +69,13 @@ const ExamPage = () => {
     }
   }, [isExpired]);
   
-  useEffect(() => {
-    if (pageNumber > 1) {
-      const savedAnswers = getAllAnswers();
-      setAnswers(savedAnswers);
-    }
-  }, [pageNumber]);
-  
   const handleNext = () => {
     if (!checkAllQuestionsAnswered(displayQuestions, answers)) {
       toast.error("Please answer all questions before proceeding");
       return;
     }
     
+    // Save only the current page's answers
     saveAnswers(answers);
     
     if (pageNumber < totalPages) {
@@ -102,8 +96,10 @@ const ExamPage = () => {
       return;
     }
     
+    // Save the current page's answers
     saveAnswers(answers);
     
+    // Submit all answers stored across pages
     submitExamAnswers(getAllAnswers());
     navigate('/student/results', { replace: true });
     toast.success("Exam submitted successfully");
