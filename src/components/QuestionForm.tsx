@@ -48,11 +48,17 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 }) => {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(currentQuestionIndex || 0);
   const [visibleQuestions, setVisibleQuestions] = useState<number[]>([0]); // Initially only show first question
+  const [localAnswers, setLocalAnswers] = useState<Record<string, any>>(currentAnswers);
   
-  // Update local state when prop changes
+  // Update local state when props change
   useEffect(() => {
     setActiveQuestionIndex(currentQuestionIndex);
   }, [currentQuestionIndex]);
+
+  // Update local answers when props change
+  useEffect(() => {
+    setLocalAnswers(currentAnswers);
+  }, [currentAnswers]);
 
   // Update visible questions when answers change
   useEffect(() => {
@@ -60,20 +66,20 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     
     // For each answered question, make the next one visible
     questions.forEach((question, index) => {
-      if (index > 0 && currentAnswers[questions[index - 1].id]) {
+      if (index > 0 && localAnswers[questions[index - 1].id]) {
         newVisibleQuestions.push(index);
       }
     });
     
     setVisibleQuestions(newVisibleQuestions);
-  }, [currentAnswers, questions]);
+  }, [localAnswers, questions]);
 
   // Check if the current question has been answered
   const isCurrentQuestionAnswered = () => {
     if (!questions[activeQuestionIndex]) return false;
     
     const questionId = questions[activeQuestionIndex].id;
-    const answer = currentAnswers[questionId];
+    const answer = localAnswers[questionId];
     
     if (!answer) return false;
     
@@ -92,6 +98,13 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   };
 
   const handleInputChange = (questionId: number, value: any) => {
+    // Update local state first
+    setLocalAnswers(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
+    
+    // Then propagate to parent
     if (onAnswerChange) {
       onAnswerChange(questionId, value);
     }
@@ -136,7 +149,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         <QuestionNavigation 
           questions={questions}
           activeQuestionIndex={activeQuestionIndex}
-          currentAnswers={currentAnswers}
+          currentAnswers={localAnswers}
           onQuestionClick={(index) => {
             // Only allow navigation to visible questions
             if (visibleQuestions.includes(index)) {
@@ -155,7 +168,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           <QuestionContent 
             question={questions[activeQuestionIndex]}
             questionIndex={activeQuestionIndex}
-            currentAnswer={currentAnswers[questions[activeQuestionIndex].id]}
+            currentAnswer={localAnswers[questions[activeQuestionIndex].id]}
             onInputChange={handleInputChange}
           />
         )}
