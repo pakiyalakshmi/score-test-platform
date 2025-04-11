@@ -104,7 +104,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           totalQuestions={questions.length}
           onPrevious={handlePreviousQuestion}
           onNext={handleNextQuestion}
-          onSubmit={onNext}
+          onSubmit={onSubmit}
         />
       </div>
     </div>

@@ -23,31 +23,25 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
   currentAnswer,
   onInputChange
 }) => {
-  // Ensure currentAnswer is properly initialized based on type
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onInputChange(question.id, e.target.value);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, index?: number, colIndex?: number, rowIndex?: number) => {
-    if (question.responseType === 'differential') {
-      // Initialize an array if it doesn't exist
-      const answersArray = Array.isArray(currentAnswer) ? [...currentAnswer] : ['', '', '', ''];
-      if (index !== undefined) {
-        answersArray[index] = e.target.value;
-        onInputChange(question.id, answersArray);
-      }
-    } else if (question.responseType === 'table' && rowIndex !== undefined && colIndex !== undefined) {
-      // Initialize or update table data
-      const newTableData = {...(currentAnswer || {})};
-      if (!newTableData[rowIndex]) {
-        newTableData[rowIndex] = {};
-      }
-      newTableData[rowIndex][colIndex] = e.target.value;
-      onInputChange(question.id, newTableData);
-    } else {
-      // Default input handling
-      onInputChange(question.id, e.target.value);
+  const handleDifferentialChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    // Initialize an array if it doesn't exist
+    const answersArray = Array.isArray(currentAnswer) ? [...currentAnswer] : ['', '', '', ''];
+    answersArray[index] = e.target.value;
+    onInputChange(question.id, answersArray);
+  };
+
+  const handleTableChange = (e: React.ChangeEvent<HTMLInputElement>, colIndex: number, rowIndex: number) => {
+    // Initialize or update table data
+    const newTableData = {...(currentAnswer || {})};
+    if (!newTableData[rowIndex]) {
+      newTableData[rowIndex] = {};
     }
+    newTableData[rowIndex][colIndex] = e.target.value;
+    onInputChange(question.id, newTableData);
   };
 
   return (
@@ -81,7 +75,7 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
                   className="w-full"
                   placeholder={`Item ${i+1}`}
                   value={answersArray[i] || ''}
-                  onChange={(e) => handleInputChange(e, i)}
+                  onChange={(e) => handleDifferentialChange(e, i)}
                 />
               </div>
             );
@@ -113,7 +107,7 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
                           type="text"
                           className="w-full border-none focus:outline-none bg-transparent"
                           value={tableData[rowIndex]?.[colIndex] || ''}
-                          onChange={(e) => handleInputChange(e, undefined, colIndex, rowIndex)}
+                          onChange={(e) => handleTableChange(e, colIndex, rowIndex)}
                         />
                       </td>
                     ))}

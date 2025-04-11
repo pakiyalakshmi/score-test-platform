@@ -21,7 +21,7 @@ const QuestionControls: React.FC<QuestionControlsProps> = ({
       <button 
         className={`px-4 py-2 rounded-md text-sm font-medium ${
           activeQuestionIndex > 0 
-            ? 'bg-gray-200 text-gray-800' 
+            ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' 
             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
         }`}
         onClick={onPrevious}
@@ -32,17 +32,17 @@ const QuestionControls: React.FC<QuestionControlsProps> = ({
 
       {activeQuestionIndex < totalQuestions - 1 ? (
         <button 
-          className="px-4 py-2 bg-clinicus-blue text-white rounded-md text-sm font-medium"
+          className="px-4 py-2 bg-clinicus-blue text-white rounded-md text-sm font-medium hover:bg-blue-700"
           onClick={onNext}
         >
           Next Question
         </button>
       ) : (
         <button 
-          className="gold-button"
+          className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-sm font-medium"
           onClick={onSubmit}
         >
-          Next
+          Submit
         </button>
       )}
     </div>
