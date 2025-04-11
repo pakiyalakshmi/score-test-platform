@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -113,10 +114,18 @@ const ExamPage = () => {
   };
   
   const handleQuestionNavigation = (index: number) => {
+    // Only allow navigation to already answered questions or the next unanswered question
+    const activeQuestion = displayQuestions[currentQuestionIndex];
+    const hasCurrentAnswer = activeQuestion && answers[activeQuestion.id];
+    
+    // If trying to move forward, only allow if current question is answered
+    if (index > currentQuestionIndex && !hasCurrentAnswer) {
+      toast.warning("Please answer the current question before proceeding");
+      return;
+    }
+    
     setCurrentQuestionIndex(index);
   };
-  
-  const patientWords = caseInfo || "Loading case information...";
   
   // Only show the relevant medical history for the current page
   const additionalHistory = pageNumber === 2 ? 
@@ -199,21 +208,43 @@ const ExamPage = () => {
             <ResizablePanel defaultSize={8} minSize={5} maxSize={12} className="bg-gray-100">
               <div className="p-2 h-full">
                 <div className="flex flex-col space-y-2">
-                  {displayQuestions.map((question, index) => (
-                    <button
-                      key={question.id}
-                      onClick={() => handleQuestionNavigation(index)}
-                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                        index === currentQuestionIndex
-                          ? 'bg-clinicus-blue text-white'
-                          : answers[question.id]
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-white text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      Q {index + 1}
-                    </button>
-                  ))}
+                  {displayQuestions.map((question, index) => {
+                    // Only show questions that are accessible
+                    // A question is accessible if:
+                    // 1. It's the current question
+                    // 2. It's a previous question that has been answered
+                    // 3. It's the next question and all previous questions are answered
+                    const isPreviousQuestion = index < currentQuestionIndex;
+                    const isCurrentQuestion = index === currentQuestionIndex;
+                    const isNextQuestion = index === currentQuestionIndex + 1;
+                    
+                    const previousQuestionsAnswered = isPreviousQuestion && 
+                      displayQuestions.slice(0, index).every(q => !!answers[q.id]);
+                    
+                    const canSeeQuestion = isCurrentQuestion || 
+                      (isPreviousQuestion && answers[question.id]) || 
+                      (isNextQuestion && displayQuestions.slice(0, index).every(q => !!answers[q.id]));
+                    
+                    if (!canSeeQuestion) {
+                      return null;
+                    }
+                    
+                    return (
+                      <button
+                        key={question.id}
+                        onClick={() => handleQuestionNavigation(index)}
+                        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                          index === currentQuestionIndex
+                            ? 'bg-clinicus-blue text-white'
+                            : answers[question.id]
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-white text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        Q {index + 1}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </ResizablePanel>
@@ -230,7 +261,7 @@ const ExamPage = () => {
                       age: pageNumber === 1 ? 2 : 75
                     }}
                     caseNumber={pageNumber}
-                    patientWords={patientWords}
+                    patientWords={caseInfo}
                   />
                 </div>
                 
@@ -270,7 +301,7 @@ const ExamPage = () => {
                 
                 <div className="flex justify-between mt-4">
                   <button 
-                    onClick={handleQuestionNavigation.bind(null, Math.max(0, currentQuestionIndex - 1))}
+                    onClick={() => handleQuestionNavigation(Math.max(0, currentQuestionIndex - 1))}
                     disabled={currentQuestionIndex === 0}
                     className="px-4 py-2 flex items-center gap-2 text-gray-600 disabled:opacity-50"
                   >
@@ -278,9 +309,10 @@ const ExamPage = () => {
                     <span>Previous</span>
                   </button>
                   
+                  {/* Only enable the Next button if current question is answered */}
                   <button 
-                    onClick={handleQuestionNavigation.bind(null, Math.min(displayQuestions.length - 1, currentQuestionIndex + 1))}
-                    disabled={currentQuestionIndex === displayQuestions.length - 1}
+                    onClick={() => handleQuestionNavigation(Math.min(displayQuestions.length - 1, currentQuestionIndex + 1))}
+                    disabled={currentQuestionIndex === displayQuestions.length - 1 || !answers[displayQuestions[currentQuestionIndex]?.id]}
                     className="px-4 py-2 flex items-center gap-2 text-gray-600 disabled:opacity-50"
                   >
                     <span>Next</span>

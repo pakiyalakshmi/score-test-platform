@@ -52,6 +52,29 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     setActiveQuestionIndex(currentQuestionIndex);
   }, [currentQuestionIndex]);
 
+  // Check if the current question has been answered
+  const isCurrentQuestionAnswered = () => {
+    if (!questions[activeQuestionIndex]) return false;
+    
+    const questionId = questions[activeQuestionIndex].id;
+    const answer = currentAnswers[questionId];
+    
+    if (!answer) return false;
+    
+    if (typeof answer === 'string') {
+      return answer.trim() !== '';
+    } else if (Array.isArray(answer)) {
+      return answer.some(item => item && item.trim() !== '');
+    } else if (typeof answer === 'object') {
+      // For table answers
+      return Object.keys(answer).length > 0 && Object.values(answer).some(
+        row => typeof row === 'object' && Object.values(row).some(cell => cell && String(cell).trim() !== '')
+      );
+    }
+    
+    return false;
+  };
+
   const handleInputChange = (questionId: number, value: any) => {
     if (onAnswerChange) {
       onAnswerChange(questionId, value);
@@ -105,6 +128,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           onPrevious={handlePreviousQuestion}
           onNext={handleNextQuestion}
           onSubmit={onSubmit}
+          isQuestionAnswered={isCurrentQuestionAnswered()}
         />
       </div>
     </div>
