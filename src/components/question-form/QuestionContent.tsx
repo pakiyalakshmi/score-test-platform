@@ -23,12 +23,11 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
   currentAnswer,
   onInputChange
 }) => {
-  // Handle text area changes
+  // Ensure currentAnswer is properly initialized based on type
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onInputChange(question.id, e.target.value);
   };
 
-  // Handle all input field changes with proper state updates
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, index?: number, colIndex?: number, rowIndex?: number) => {
     if (question.responseType === 'differential') {
       // Initialize an array if it doesn't exist
@@ -52,7 +51,7 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
   };
 
   return (
-    <div key={question.id} className="animate-fade-in">
+    <div key={question.id}>
       <h3 className="text-lg font-medium mb-3">{questionIndex + 1}. {question.title}</h3>
       {question.description && (
         <p className="text-sm text-gray-600 mb-4">{question.description}</p>

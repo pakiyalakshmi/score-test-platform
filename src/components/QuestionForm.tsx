@@ -46,47 +46,11 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   onQuestionNavigation
 }) => {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(currentQuestionIndex || 0);
-  const [completedQuestions, setCompletedQuestions] = useState<number[]>([]);
-  const [visibleQuestions, setVisibleQuestions] = useState<number[]>([0]); // Start with only first question visible
   
   // Update local state when prop changes
   useEffect(() => {
     setActiveQuestionIndex(currentQuestionIndex);
   }, [currentQuestionIndex]);
-
-  // Check for completed questions on mount and when answers change
-  useEffect(() => {
-    const newCompletedQuestions: number[] = [];
-    
-    // Check each question's answer
-    questions.forEach((question, index) => {
-      const answer = currentAnswers[question.id];
-      
-      if (answer) {
-        // For text responses
-        if (question.responseType === 'text' && typeof answer === 'string' && answer.trim() !== '') {
-          newCompletedQuestions.push(index);
-        }
-        // For differential (array) responses
-        else if (question.responseType === 'differential' && Array.isArray(answer) && 
-                answer.some(item => item && item.trim() !== '')) {
-          newCompletedQuestions.push(index);
-        }
-        // For table responses
-        else if (question.responseType === 'table' && typeof answer === 'object' && 
-                Object.keys(answer).length > 0) {
-          newCompletedQuestions.push(index);
-        }
-      }
-    });
-    
-    setCompletedQuestions(newCompletedQuestions);
-    
-    // Update visible questions based on completed ones
-    const maxVisible = Math.max(...completedQuestions, 0) + 1;
-    const newVisibleQuestions = Array.from({ length: maxVisible + 1 }, (_, i) => i).filter(i => i < questions.length);
-    setVisibleQuestions(newVisibleQuestions);
-  }, [currentAnswers, questions]);
 
   const handleInputChange = (questionId: number, value: any) => {
     if (onAnswerChange) {
@@ -114,9 +78,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     }
   };
 
-  // Only show the active question if it's supposed to be visible
+  // Only show the active question
   const activeQuestion = questions[activeQuestionIndex];
-  const isQuestionVisible = visibleQuestions.includes(activeQuestionIndex);
 
   return (
     <div className="flex flex-col h-full animate-fade-in">
@@ -127,17 +90,13 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       />
 
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        {activeQuestion && isQuestionVisible ? (
+        {activeQuestion && (
           <QuestionContent 
             question={activeQuestion}
             questionIndex={activeQuestionIndex}
             currentAnswer={currentAnswers[activeQuestion.id]}
             onInputChange={handleInputChange}
           />
-        ) : (
-          <div className="p-4 text-center text-gray-500">
-            Please complete the previous question to proceed.
-          </div>
         )}
 
         <QuestionControls 
@@ -146,7 +105,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           onPrevious={handlePreviousQuestion}
           onNext={handleNextQuestion}
           onSubmit={onNext}
-          isNextDisabled={activeQuestionIndex < questions.length - 1 && !completedQuestions.includes(activeQuestionIndex)}
         />
       </div>
     </div>
