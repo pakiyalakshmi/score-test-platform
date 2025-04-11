@@ -29,7 +29,7 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
 
   const handleDifferentialChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     // Initialize an array if it doesn't exist
-    const answersArray = Array.isArray(currentAnswer) ? [...currentAnswer] : ['', '', '', ''];
+    const answersArray = Array.isArray(currentAnswer) ? [...currentAnswer] : Array(4).fill('');
     answersArray[index] = e.target.value;
     onInputChange(question.id, answersArray);
   };
@@ -65,7 +65,7 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
           {Array.from({ length: 4 }).map((_, i) => {
             const answersArray = Array.isArray(currentAnswer) 
               ? currentAnswer 
-              : ['', '', '', ''];
+              : Array(4).fill('');
               
             return (
               <div key={i} className="flex items-center gap-2">

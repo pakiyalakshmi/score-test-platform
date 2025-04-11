@@ -27,6 +27,8 @@ const QuestionNavigation: React.FC<QuestionNavigationProps> = ({
           return null;
         }
         
+        const isAnswered = !!currentAnswers[question.id];
+        
         return (
           <button
             key={question.id}
@@ -34,7 +36,7 @@ const QuestionNavigation: React.FC<QuestionNavigationProps> = ({
             className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
               index === activeQuestionIndex
                 ? 'bg-clinicus-blue text-white'
-                : currentAnswers[question.id]
+                : isAnswered
                 ? 'bg-green-100 text-green-800'
                 : 'bg-gray-100 text-gray-600'
             }`}
