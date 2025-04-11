@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import ExamHeader from './question-form/ExamHeader';
 import QuestionContent from './question-form/QuestionContent';
 import QuestionControls from './question-form/QuestionControls';
+import QuestionNavigation from './question-form/QuestionNavigation';
 
 interface QuestionFormProps {
   examTitle: string;
@@ -46,11 +47,26 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   onQuestionNavigation
 }) => {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(currentQuestionIndex || 0);
+  const [visibleQuestions, setVisibleQuestions] = useState<number[]>([0]); // Initially only show first question
   
   // Update local state when prop changes
   useEffect(() => {
     setActiveQuestionIndex(currentQuestionIndex);
   }, [currentQuestionIndex]);
+
+  // Update visible questions when answers change
+  useEffect(() => {
+    const newVisibleQuestions = [0]; // Always show the first question
+    
+    // For each answered question, make the next one visible
+    questions.forEach((question, index) => {
+      if (index > 0 && currentAnswers[questions[index - 1].id]) {
+        newVisibleQuestions.push(index);
+      }
+    });
+    
+    setVisibleQuestions(newVisibleQuestions);
+  }, [currentAnswers, questions]);
 
   // Check if the current question has been answered
   const isCurrentQuestionAnswered = () => {
@@ -83,10 +99,17 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 
   const handleNextQuestion = () => {
     if (activeQuestionIndex < questions.length - 1) {
+      const nextIndex = activeQuestionIndex + 1;
+      
+      // Check if the next question is already visible
+      if (!visibleQuestions.includes(nextIndex)) {
+        setVisibleQuestions(prev => [...prev, nextIndex]);
+      }
+      
       if (onQuestionNavigation) {
-        onQuestionNavigation(activeQuestionIndex + 1);
+        onQuestionNavigation(nextIndex);
       } else {
-        setActiveQuestionIndex(activeQuestionIndex + 1);
+        setActiveQuestionIndex(nextIndex);
       }
     }
   };
@@ -101,9 +124,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     }
   };
 
-  // Only show the active question
-  const activeQuestion = questions[activeQuestionIndex];
-
   return (
     <div className="flex flex-col h-full animate-fade-in">
       <ExamHeader 
@@ -113,11 +133,29 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       />
 
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        {activeQuestion && (
+        <QuestionNavigation 
+          questions={questions}
+          activeQuestionIndex={activeQuestionIndex}
+          currentAnswers={currentAnswers}
+          onQuestionClick={(index) => {
+            // Only allow navigation to visible questions
+            if (visibleQuestions.includes(index)) {
+              if (onQuestionNavigation) {
+                onQuestionNavigation(index);
+              } else {
+                setActiveQuestionIndex(index);
+              }
+            }
+          }}
+          visibleQuestions={visibleQuestions}
+        />
+
+        {/* Only show questions that are in the visibleQuestions array */}
+        {visibleQuestions.includes(activeQuestionIndex) && questions[activeQuestionIndex] && (
           <QuestionContent 
-            question={activeQuestion}
+            question={questions[activeQuestionIndex]}
             questionIndex={activeQuestionIndex}
-            currentAnswer={currentAnswers[activeQuestion.id]}
+            currentAnswer={currentAnswers[questions[activeQuestionIndex].id]}
             onInputChange={handleInputChange}
           />
         )}
