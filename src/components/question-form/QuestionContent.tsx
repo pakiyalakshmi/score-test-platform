@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 
@@ -27,18 +27,30 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
   paragraphChunks = [],
   visibleChunks = []
 }) => {
+  // Stabilize the current answer to prevent cursor jumping
+  const stableAnswer = React.useMemo(() => {
+    if (question.responseType === 'text') {
+      return currentAnswer || '';
+    } else if (question.responseType === 'differential') {
+      return Array.isArray(currentAnswer) ? currentAnswer : Array(4).fill('');
+    } else if (question.responseType === 'table') {
+      return currentAnswer || {};
+    }
+    return currentAnswer;
+  }, [currentAnswer, question.responseType]);
+
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onInputChange(question.id, e.target.value);
   };
 
   const handleDifferentialChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-    const answersArray = Array.isArray(currentAnswer) ? [...currentAnswer] : Array(4).fill('');
+    const answersArray = Array.isArray(stableAnswer) ? [...stableAnswer] : Array(4).fill('');
     answersArray[index] = e.target.value;
     onInputChange(question.id, answersArray);
   };
 
   const handleTableChange = (e: React.ChangeEvent<HTMLInputElement>, colIndex: number, rowIndex: number) => {
-    const newTableData = {...(currentAnswer || {})};
+    const newTableData = {...(stableAnswer || {})};
     if (!newTableData[rowIndex]) {
       newTableData[rowIndex] = {};
     }
@@ -74,7 +86,7 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
             key={`text-${question.id}`}
             className="w-full min-h-[120px]"
             placeholder="Type your response here..."
-            value={currentAnswer || ''}
+            value={stableAnswer}
             onChange={handleTextChange}
           />
         )}
@@ -82,8 +94,8 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
         {question.responseType === 'differential' && (
           <div className="grid grid-cols-1 gap-2">
             {Array.from({ length: 4 }).map((_, i) => {
-              const answersArray = Array.isArray(currentAnswer) 
-                ? currentAnswer 
+              const answersArray = Array.isArray(stableAnswer) 
+                ? stableAnswer 
                 : Array(4).fill('');
                 
               return (
@@ -116,7 +128,7 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
               </thead>
               <tbody>
                 {Array.from({ length: 4 }).map((_, rowIndex) => {
-                  const tableData = currentAnswer || {};
+                  const tableData = stableAnswer || {};
                   
                   return (
                     <tr key={rowIndex}>

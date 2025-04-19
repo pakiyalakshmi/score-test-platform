@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import ExamHeader from './question-form/ExamHeader';
 import QuestionContent from './question-form/QuestionContent';
@@ -53,17 +54,21 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   
   const paragraphChunks = useMemo(() => {
     if (!patientWords) return [];
-    return patientWords.split(/[.!?]+/).filter(chunk => chunk.trim().length > 0);
+    // Split the paragraph into chunks by sentence endings (., !, ?)
+    return patientWords.split(/(?<=[.!?])\s+/).filter(chunk => chunk.trim().length > 0);
   }, [patientWords]);
 
+  // Update active question index when prop changes
   useEffect(() => {
     setActiveQuestionIndex(currentQuestionIndex);
   }, [currentQuestionIndex]);
 
+  // Update local answers when prop changes
   useEffect(() => {
-    setLocalAnswers(currentAnswers);
+    setLocalAnswers(prev => ({...prev, ...currentAnswers}));
   }, [currentAnswers]);
 
+  // Update visible chunks based on answered questions
   useEffect(() => {
     if (paragraphChunks.length === 0) return;
 
@@ -74,9 +79,10 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       }
     });
     
-    setVisibleChunks(newVisibleChunks);
+    setVisibleChunks([...new Set(newVisibleChunks)]);
   }, [localAnswers, questions, paragraphChunks.length]);
 
+  // Determine if the current question has been answered
   const isCurrentQuestionAnswered = () => {
     if (!questions[activeQuestionIndex]) return false;
     
@@ -98,17 +104,21 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     return false;
   };
 
+  // Handle input changes
   const handleInputChange = (questionId: number, value: any) => {
-    setLocalAnswers(prev => ({
-      ...prev,
+    const newAnswers = {
+      ...localAnswers,
       [questionId]: value
-    }));
+    };
+    
+    setLocalAnswers(newAnswers);
     
     if (onAnswerChange) {
       onAnswerChange(questionId, value);
     }
   };
 
+  // Navigate to next question
   const handleNextQuestion = () => {
     if (activeQuestionIndex < questions.length - 1) {
       const nextIndex = activeQuestionIndex + 1;
@@ -125,6 +135,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     }
   };
 
+  // Navigate to previous question
   const handlePreviousQuestion = () => {
     if (activeQuestionIndex > 0) {
       if (onQuestionNavigation) {
@@ -134,6 +145,15 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       }
     }
   };
+
+  // Debug logging
+  console.log('QuestionForm state:', {
+    activeQuestionIndex,
+    visibleQuestions,
+    visibleChunks,
+    localAnswers,
+    paragraphChunks
+  });
 
   return (
     <div className="flex flex-col h-full animate-fade-in">
