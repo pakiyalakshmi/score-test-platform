@@ -114,17 +114,47 @@ const ExamPage = () => {
   };
   
   const handleQuestionNavigation = (index: number) => {
-    // Only allow navigation to already answered questions or the next unanswered question
+    // Get the current question that's active
     const activeQuestion = displayQuestions[currentQuestionIndex];
-    const hasCurrentAnswer = activeQuestion && answers[activeQuestion.id];
     
-    // If trying to move forward, only allow if current question is answered
-    if (index > currentQuestionIndex && !hasCurrentAnswer) {
+    // Only allow going backward freely
+    if (index < currentQuestionIndex) {
+      setCurrentQuestionIndex(index);
+      return;
+    }
+    
+    // For forward navigation, check if current question is answered
+    const hasCurrentAnswer = activeQuestion && answers[activeQuestion.id];
+    const hasMeaningfulAnswer = hasCurrentAnswer ? 
+      isAnswerMeaningful(activeQuestion.id, answers) : 
+      false;
+      
+    if (!hasMeaningfulAnswer) {
       toast.warning("Please answer the current question before proceeding");
       return;
     }
     
+    // All checks passed, update the index
     setCurrentQuestionIndex(index);
+  };
+  
+  // Helper function to check if an answer is meaningful
+  const isAnswerMeaningful = (questionId: number, answers: Record<string, any>) => {
+    const answer = answers[questionId];
+    
+    if (!answer) return false;
+    
+    if (typeof answer === 'string') {
+      return answer.trim() !== '';
+    } else if (Array.isArray(answer)) {
+      return answer.some(item => item && item.trim() !== '');
+    } else if (typeof answer === 'object') {
+      return Object.keys(answer).length > 0 && Object.values(answer).some(
+        row => typeof row === 'object' && Object.values(row).some(cell => cell && String(cell).trim() !== '')
+      );
+    }
+    
+    return false;
   };
   
   // Only show the relevant medical history for the current page
@@ -218,12 +248,13 @@ const ExamPage = () => {
                     const isCurrentQuestion = index === currentQuestionIndex;
                     const isNextQuestion = index === currentQuestionIndex + 1;
                     
-                    const previousQuestionsAnswered = isPreviousQuestion && 
-                      displayQuestions.slice(0, index).every(q => !!answers[q.id]);
+                    const previousQuestionsAnswered = displayQuestions
+                      .slice(0, index)
+                      .every(q => isAnswerMeaningful(q.id, answers));
                     
                     const canSeeQuestion = isCurrentQuestion || 
-                      (isPreviousQuestion && answers[question.id]) || 
-                      (isNextQuestion && displayQuestions.slice(0, index).every(q => !!answers[q.id]));
+                      (isPreviousQuestion && isAnswerMeaningful(question.id, answers)) || 
+                      (isNextQuestion && previousQuestionsAnswered);
                     
                     if (!canSeeQuestion) {
                       return null;
@@ -236,7 +267,7 @@ const ExamPage = () => {
                         className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                           index === currentQuestionIndex
                             ? 'bg-clinicus-blue text-white'
-                            : answers[question.id]
+                            : isAnswerMeaningful(question.id, answers)
                             ? 'bg-green-100 text-green-800'
                             : 'bg-white text-gray-600 hover:bg-gray-200'
                         }`}
@@ -312,7 +343,10 @@ const ExamPage = () => {
                   {/* Only enable the Next button if current question is answered */}
                   <button 
                     onClick={() => handleQuestionNavigation(Math.min(displayQuestions.length - 1, currentQuestionIndex + 1))}
-                    disabled={currentQuestionIndex === displayQuestions.length - 1 || !answers[displayQuestions[currentQuestionIndex]?.id]}
+                    disabled={
+                      currentQuestionIndex === displayQuestions.length - 1 || 
+                      !isAnswerMeaningful(displayQuestions[currentQuestionIndex]?.id, answers)
+                    }
                     className="px-4 py-2 flex items-center gap-2 text-gray-600 disabled:opacity-50"
                   >
                     <span>Next</span>

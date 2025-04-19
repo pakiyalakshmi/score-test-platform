@@ -130,6 +130,12 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     if (activeQuestionIndex < questions.length - 1) {
       const nextIndex = activeQuestionIndex + 1;
       
+      // Only navigate if current question is answered
+      if (!isCurrentQuestionAnswered()) {
+        console.log("Cannot navigate - current question not answered");
+        return;
+      }
+      
       if (!visibleQuestions.includes(nextIndex)) {
         setVisibleQuestions(prev => [...prev, nextIndex]);
       }
@@ -177,12 +183,32 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           activeQuestionIndex={activeQuestionIndex}
           currentAnswers={localAnswers}
           onQuestionClick={(index) => {
-            if (visibleQuestions.includes(index)) {
+            // Don't attempt navigation if the question isn't visible
+            if (!visibleQuestions.includes(index)) {
+              return;
+            }
+            
+            // Allow going back to previous questions always
+            if (index < activeQuestionIndex) {
               if (onQuestionNavigation) {
                 onQuestionNavigation(index);
               } else {
                 setActiveQuestionIndex(index);
               }
+              return;
+            }
+            
+            // For going forward, check if current question is answered
+            if (!isCurrentQuestionAnswered()) {
+              console.log("Cannot navigate forward - current question not answered");
+              return;
+            }
+            
+            // All checks passed, navigate to the requested question
+            if (onQuestionNavigation) {
+              onQuestionNavigation(index);
+            } else {
+              setActiveQuestionIndex(index);
             }
           }}
           visibleQuestions={visibleQuestions}
