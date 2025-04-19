@@ -19,6 +19,31 @@ const QuestionNavigation: React.FC<QuestionNavigationProps> = ({
   onQuestionClick,
   visibleQuestions
 }) => {
+  // Helper function to check if a question has an answer
+  const hasAnswer = (questionId: number) => {
+    const answer = currentAnswers[questionId];
+    
+    if (!answer) return false;
+    
+    if (typeof answer === 'string') {
+      return answer.trim() !== '';
+    } else if (Array.isArray(answer)) {
+      return answer.some(item => item && item.trim() !== '');
+    } else if (typeof answer === 'object') {
+      return Object.keys(answer).length > 0 && Object.values(answer).some(
+        row => typeof row === 'object' && Object.values(row).some(cell => cell && String(cell).trim() !== '')
+      );
+    }
+    
+    return false;
+  };
+
+  console.log("QuestionNavigation state:", { 
+    activeQuestionIndex, 
+    visibleQuestions,
+    currentAnswers
+  });
+
   return (
     <div className="flex mb-4 space-x-2 overflow-x-auto py-2">
       {questions.map((question, index) => {
@@ -27,7 +52,7 @@ const QuestionNavigation: React.FC<QuestionNavigationProps> = ({
           return null;
         }
         
-        const isAnswered = !!currentAnswers[question.id];
+        const isAnswered = hasAnswer(question.id);
         
         return (
           <button

@@ -74,7 +74,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 
     const newVisibleChunks = [0];
     questions.forEach((question, index) => {
-      if (localAnswers[question.id] && index < paragraphChunks.length) {
+      if (hasAnswer(question.id, localAnswers) && index < paragraphChunks.length) {
         newVisibleChunks.push(index + 1);
       }
     });
@@ -82,12 +82,9 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     setVisibleChunks([...new Set(newVisibleChunks)]);
   }, [localAnswers, questions, paragraphChunks.length]);
 
-  // Determine if the current question has been answered
-  const isCurrentQuestionAnswered = () => {
-    if (!questions[activeQuestionIndex]) return false;
-    
-    const questionId = questions[activeQuestionIndex].id;
-    const answer = localAnswers[questionId];
+  // Helper function to check if a question has a valid answer
+  const hasAnswer = (questionId: number, answers: Record<string, any>) => {
+    const answer = answers[questionId];
     
     if (!answer) return false;
     
@@ -104,8 +101,18 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     return false;
   };
 
+  // Determine if the current question has been answered
+  const isCurrentQuestionAnswered = () => {
+    if (!questions[activeQuestionIndex]) return false;
+    
+    const questionId = questions[activeQuestionIndex].id;
+    return hasAnswer(questionId, localAnswers);
+  };
+
   // Handle input changes
   const handleInputChange = (questionId: number, value: any) => {
+    console.log("Input changed for question", questionId, "with value:", value);
+    
     const newAnswers = {
       ...localAnswers,
       [questionId]: value
@@ -152,7 +159,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     visibleQuestions,
     visibleChunks,
     localAnswers,
-    paragraphChunks
+    paragraphChunks,
+    currentAnswers
   });
 
   return (

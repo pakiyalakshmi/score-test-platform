@@ -18,6 +18,12 @@ const QuestionControls: React.FC<QuestionControlsProps> = ({
   onSubmit,
   isQuestionAnswered = false
 }) => {
+  console.log("QuestionControls state:", { 
+    activeQuestionIndex, 
+    totalQuestions, 
+    isQuestionAnswered 
+  });
+
   return (
     <div className="flex justify-between mt-6">
       <button 

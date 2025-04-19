@@ -58,6 +58,11 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
     onInputChange(question.id, newTableData);
   };
 
+  // Log the current answer for debugging
+  useEffect(() => {
+    console.log(`Question ${question.id} answer:`, currentAnswer);
+  }, [currentAnswer, question.id]);
+
   // Display paragraph chunks progressively
   const renderParagraphChunks = () => {
     return paragraphChunks.map((chunk, index) => {
