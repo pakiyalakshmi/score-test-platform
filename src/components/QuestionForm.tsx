@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import ExamHeader from './question-form/ExamHeader';
 import QuestionContent from './question-form/QuestionContent';
 import QuestionControls from './question-form/QuestionControls';
@@ -44,37 +43,40 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   onAnswerChange,
   currentAnswers = {},
   currentQuestionIndex = 0,
-  onQuestionNavigation
+  onQuestionNavigation,
+  patientWords
 }) => {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(currentQuestionIndex || 0);
-  const [visibleQuestions, setVisibleQuestions] = useState<number[]>([0]); // Initially only show first question
+  const [visibleQuestions, setVisibleQuestions] = useState<number[]>([0]);
   const [localAnswers, setLocalAnswers] = useState<Record<string, any>>(currentAnswers);
+  const [visibleChunks, setVisibleChunks] = useState<number[]>([0]);
   
-  // Update local state when props change
+  const paragraphChunks = useMemo(() => {
+    if (!patientWords) return [];
+    return patientWords.split(/[.!?]+/).filter(chunk => chunk.trim().length > 0);
+  }, [patientWords]);
+
   useEffect(() => {
     setActiveQuestionIndex(currentQuestionIndex);
   }, [currentQuestionIndex]);
 
-  // Update local answers when props change
   useEffect(() => {
     setLocalAnswers(currentAnswers);
   }, [currentAnswers]);
 
-  // Update visible questions when answers change
   useEffect(() => {
-    const newVisibleQuestions = [0]; // Always show the first question
-    
-    // For each answered question, make the next one visible
+    if (paragraphChunks.length === 0) return;
+
+    const newVisibleChunks = [0];
     questions.forEach((question, index) => {
-      if (index > 0 && localAnswers[questions[index - 1].id]) {
-        newVisibleQuestions.push(index);
+      if (localAnswers[question.id] && index < paragraphChunks.length) {
+        newVisibleChunks.push(index + 1);
       }
     });
     
-    setVisibleQuestions(newVisibleQuestions);
-  }, [localAnswers, questions]);
+    setVisibleChunks(newVisibleChunks);
+  }, [localAnswers, questions, paragraphChunks.length]);
 
-  // Check if the current question has been answered
   const isCurrentQuestionAnswered = () => {
     if (!questions[activeQuestionIndex]) return false;
     
@@ -88,7 +90,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     } else if (Array.isArray(answer)) {
       return answer.some(item => item && item.trim() !== '');
     } else if (typeof answer === 'object') {
-      // For table answers
       return Object.keys(answer).length > 0 && Object.values(answer).some(
         row => typeof row === 'object' && Object.values(row).some(cell => cell && String(cell).trim() !== '')
       );
@@ -98,13 +99,11 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   };
 
   const handleInputChange = (questionId: number, value: any) => {
-    // Update local state first
     setLocalAnswers(prev => ({
       ...prev,
       [questionId]: value
     }));
     
-    // Then propagate to parent
     if (onAnswerChange) {
       onAnswerChange(questionId, value);
     }
@@ -114,7 +113,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     if (activeQuestionIndex < questions.length - 1) {
       const nextIndex = activeQuestionIndex + 1;
       
-      // Check if the next question is already visible
       if (!visibleQuestions.includes(nextIndex)) {
         setVisibleQuestions(prev => [...prev, nextIndex]);
       }
@@ -151,7 +149,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           activeQuestionIndex={activeQuestionIndex}
           currentAnswers={localAnswers}
           onQuestionClick={(index) => {
-            // Only allow navigation to visible questions
             if (visibleQuestions.includes(index)) {
               if (onQuestionNavigation) {
                 onQuestionNavigation(index);
@@ -163,13 +160,14 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           visibleQuestions={visibleQuestions}
         />
 
-        {/* Only show questions that are in the visibleQuestions array */}
         {visibleQuestions.includes(activeQuestionIndex) && questions[activeQuestionIndex] && (
           <QuestionContent 
             question={questions[activeQuestionIndex]}
             questionIndex={activeQuestionIndex}
             currentAnswer={localAnswers[questions[activeQuestionIndex].id]}
             onInputChange={handleInputChange}
+            paragraphChunks={paragraphChunks}
+            visibleChunks={visibleChunks}
           />
         )}
 
