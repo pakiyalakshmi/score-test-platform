@@ -47,6 +47,7 @@ const QuestionControls: React.FC<QuestionControlsProps> = ({
           }`}
           onClick={onNext}
           disabled={!isQuestionAnswered}
+          aria-disabled={!isQuestionAnswered}
         >
           Next Question
         </button>
@@ -59,6 +60,7 @@ const QuestionControls: React.FC<QuestionControlsProps> = ({
           }`}
           onClick={onSubmit}
           disabled={!isQuestionAnswered}
+          aria-disabled={!isQuestionAnswered}
         >
           Submit
         </button>

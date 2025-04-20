@@ -27,25 +27,29 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
   paragraphChunks = [],
   visibleChunks = []
 }) => {
-  // Stabilize the current answer to prevent cursor jumping
+  // Initialize stable answers based on question type
   const stableAnswer = React.useMemo(() => {
     if (question.responseType === 'text') {
-      return currentAnswer || '';
+      return typeof currentAnswer === 'string' ? currentAnswer : '';
     } else if (question.responseType === 'differential') {
       return Array.isArray(currentAnswer) ? currentAnswer : Array(4).fill('');
     } else if (question.responseType === 'table') {
-      return currentAnswer || {};
+      return typeof currentAnswer === 'object' ? currentAnswer : {};
+    } else if (question.responseType === 'multiChoice') {
+      return Array.isArray(currentAnswer) ? currentAnswer : [];
     }
     return currentAnswer;
   }, [currentAnswer, question.responseType]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    console.log("Text input changed:", e.target.value);
     onInputChange(question.id, e.target.value);
   };
 
   const handleDifferentialChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const answersArray = Array.isArray(stableAnswer) ? [...stableAnswer] : Array(4).fill('');
     answersArray[index] = e.target.value;
+    console.log("Differential input changed:", answersArray);
     onInputChange(question.id, answersArray);
   };
 
@@ -55,6 +59,7 @@ const QuestionContent: React.FC<QuestionContentProps> = ({
       newTableData[rowIndex] = {};
     }
     newTableData[rowIndex][colIndex] = e.target.value;
+    console.log("Table input changed:", newTableData);
     onInputChange(question.id, newTableData);
   };
 

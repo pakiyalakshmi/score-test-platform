@@ -74,7 +74,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 
     const newVisibleChunks = [0];
     questions.forEach((question, index) => {
-      if (hasAnswer(question.id, localAnswers) && index < paragraphChunks.length) {
+      if (hasAnswer(question.id) && index < paragraphChunks.length) {
         newVisibleChunks.push(index + 1);
       }
     });
@@ -82,20 +82,30 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     setVisibleChunks([...new Set(newVisibleChunks)]);
   }, [localAnswers, questions, paragraphChunks.length]);
 
-  // Helper function to check if a question has a valid answer
-  const hasAnswer = (questionId: number, answers: Record<string, any>) => {
-    const answer = answers[questionId];
+  // Improved helper function to check if a question has a valid answer
+  const hasAnswer = (questionId: number) => {
+    const answer = localAnswers[questionId];
     
-    if (!answer) return false;
+    if (answer === undefined || answer === null) return false;
     
     if (typeof answer === 'string') {
-      return answer.trim() !== '';
-    } else if (Array.isArray(answer)) {
-      return answer.some(item => item && item.trim() !== '');
-    } else if (typeof answer === 'object') {
-      return Object.keys(answer).length > 0 && Object.values(answer).some(
-        row => typeof row === 'object' && Object.values(row).some(cell => cell && String(cell).trim() !== '')
-      );
+      return answer.trim().length > 0;
+    } 
+    
+    if (Array.isArray(answer)) {
+      // For differential diagnosis or multiple choice, at least one item should be filled
+      return answer.some(item => item && typeof item === 'string' && item.trim().length > 0);
+    } 
+    
+    if (typeof answer === 'object') {
+      // For table responses
+      return Object.keys(answer).length > 0 && 
+        Object.values(answer).some(row => {
+          if (typeof row !== 'object') return false;
+          return Object.values(row).some(cell => 
+            cell !== null && cell !== undefined && String(cell).trim().length > 0
+          );
+        });
     }
     
     return false;
@@ -106,7 +116,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     if (!questions[activeQuestionIndex]) return false;
     
     const questionId = questions[activeQuestionIndex].id;
-    return hasAnswer(questionId, localAnswers);
+    return hasAnswer(questionId);
   };
 
   // Handle input changes
@@ -145,6 +155,11 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       } else {
         setActiveQuestionIndex(nextIndex);
       }
+    } else {
+      // Last question - call onNext if answered
+      if (isCurrentQuestionAnswered()) {
+        onNext();
+      }
     }
   };
 
@@ -166,7 +181,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     visibleChunks,
     localAnswers,
     paragraphChunks,
-    currentAnswers
+    currentAnswers,
+    isCurrentQuestionAnswered: isCurrentQuestionAnswered()
   });
 
   return (
@@ -212,13 +228,14 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
             }
           }}
           visibleQuestions={visibleQuestions}
+          hasAnswer={hasAnswer}
         />
 
         {visibleQuestions.includes(activeQuestionIndex) && questions[activeQuestionIndex] && (
           <QuestionContent 
             question={questions[activeQuestionIndex]}
             questionIndex={activeQuestionIndex}
-            currentAnswer={localAnswers[questions[activeQuestionIndex].id]}
+            currentAnswer={localAnswers[questions[activeQuestionIndex].id] || ''}
             onInputChange={handleInputChange}
             paragraphChunks={paragraphChunks}
             visibleChunks={visibleChunks}

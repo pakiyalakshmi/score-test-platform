@@ -9,7 +9,8 @@ interface QuestionNavigationProps {
   activeQuestionIndex: number;
   currentAnswers: Record<string, any>;
   onQuestionClick: (index: number) => void;
-  visibleQuestions: number[]; // Add visible questions prop
+  visibleQuestions: number[];
+  hasAnswer: (questionId: number) => boolean;
 }
 
 const QuestionNavigation: React.FC<QuestionNavigationProps> = ({
@@ -17,27 +18,9 @@ const QuestionNavigation: React.FC<QuestionNavigationProps> = ({
   activeQuestionIndex,
   currentAnswers,
   onQuestionClick,
-  visibleQuestions
+  visibleQuestions,
+  hasAnswer
 }) => {
-  // Helper function to check if a question has an answer
-  const hasAnswer = (questionId: number) => {
-    const answer = currentAnswers[questionId];
-    
-    if (!answer) return false;
-    
-    if (typeof answer === 'string') {
-      return answer.trim() !== '';
-    } else if (Array.isArray(answer)) {
-      return answer.some(item => item && item.trim() !== '');
-    } else if (typeof answer === 'object') {
-      return Object.keys(answer).length > 0 && Object.values(answer).some(
-        row => typeof row === 'object' && Object.values(row).some(cell => cell && String(cell).trim() !== '')
-      );
-    }
-    
-    return false;
-  };
-
   console.log("QuestionNavigation state:", { 
     activeQuestionIndex, 
     visibleQuestions,
